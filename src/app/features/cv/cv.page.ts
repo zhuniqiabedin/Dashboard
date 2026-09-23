@@ -1,3 +1,30 @@
 import { Component } from '@angular/core';
-@Component({ selector: 'app-cv-page', standalone: false, template: `<section><div class="flex flex-wrap items-end justify-between gap-4"><div><div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">TELL YOUR STORY ✦</div><h1 class="mt-2 text-3xl font-semibold tracking-tight">Your CV</h1><p class="mt-2 text-sm text-stone-500">A living snapshot of where you’ve been and what you can do.</p></div><button class="rounded-xl bg-[#43563c] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]" (click)="notice='Your CV is saved and ready to share.'">↗ &nbsp; Preview CV</button></div>@if(notice){<p class="mt-4 text-sm text-[#536649]">{{notice}}</p>}<div class="mt-7 grid gap-5 xl:grid-cols-[minmax(0,1fr)_290px]"><section class="rounded-2xl border border-stone-200/80 bg-white p-5 sm:p-8"><div class="flex items-center justify-between text-xs text-stone-400"><span>● &nbsp;All changes saved</span><button aria-label="More options">···</button></div><div class="mx-auto mt-6 max-w-[690px] bg-white px-2 py-4 sm:px-8 sm:py-8"><div class="flex items-center gap-4 border-b border-stone-200 pb-6"><div class="grid size-16 place-items-center rounded-full bg-[#e9ded1] text-lg font-semibold text-[#735a47]">{{initials}}</div><div><h2 class="text-2xl font-semibold">{{name}}</h2><p class="mt-1 text-sm text-stone-500">Product Designer <span class="px-1">·</span> Belgrade, Serbia</p><small class="mt-2 block text-xs text-stone-400">{{email}} &nbsp; · &nbsp; linkedin.com/in/{{handle}}</small></div></div><div class="cv-section"><h3>PROFILE</h3><p>Curious product designer with a passion for making complex things feel simple. I bring a thoughtful, research-led approach to building digital experiences people love.</p></div><div class="cv-section"><h3>EXPERIENCE</h3><div class="mb-4"><b>Product Designer</b><small>Northstar Studio <i>·</i> 2023 — Present</small><p>Lead design across early-stage products, from first sketches to shipped experiences. Partner closely with engineering and research.</p></div><div><b>UX Designer</b><small>Goodwell Digital <i>·</i> 2021 — 2023</small><p>Designed clear, accessible journeys for a range of customer-facing web applications.</p></div></div><div class="cv-section"><h3>EDUCATION</h3><b>BA, Interaction Design</b><small>University of Arts, Belgrade <i>·</i> 2017 — 2021</small></div><div class="cv-section"><h3>SKILLS</h3><div class="flex flex-wrap gap-2"><span class="skill">Product design</span><span class="skill">Prototyping</span><span class="skill">Figma</span><span class="skill">User research</span><span class="skill">Design systems</span></div></div></div></section><aside class="space-y-4"><section class="flex items-center gap-4 rounded-2xl border border-stone-200/80 bg-white p-5"><div class="grid size-14 shrink-0 place-items-center rounded-full border-[5px] border-[#e8eee1] border-t-[#738867] text-xs font-semibold">82%</div><div><div class="text-[9px] font-semibold tracking-wider text-stone-400">LOOKING GOOD</div><h3 class="mt-1 text-sm font-semibold">CV completeness</h3><p class="mt-1 text-xs leading-5 text-stone-500">A couple more details and you’re ready to go.</p></div></section><section class="rounded-2xl border border-stone-200/80 bg-white p-5"><div class="text-[9px] font-semibold tracking-wider text-stone-400">A QUICK TIP</div><h3 class="mt-2 font-semibold">Make it yours.</h3><p class="mt-2 text-sm leading-6 text-stone-500">Add a few measurable wins to your experience section. Specifics help your story stick.</p><button class="mt-4 text-xs font-medium text-[#66785b]" (click)="notice='Tip saved for later.'">Got it →</button></section><p class="px-2 text-xs text-stone-400">Your CV is private until you choose to share it.</p></aside></div></section>` })
-export class CvPage { name='Your Name'; email=''; handle='yourname'; initials='YN'; constructor(){try{const raw=localStorage.getItem('career-space-user');if(raw){const user=JSON.parse(raw) as {name:string;email:string};this.name=user.name;this.email=user.email;this.handle=user.name.toLowerCase().replace(/\s+/g,'');this.initials=user.name.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()}}catch{}}notice=''; }
+@Component({
+  selector: 'app-cv-page',
+  standalone: false,
+  templateUrl: './cv.page.html',
+})
+export class CvPage {
+  name = 'Your Name';
+  email = '';
+  handle = 'yourname';
+  initials = 'YN';
+  constructor() {
+    try {
+      const raw = localStorage.getItem('career-space-user');
+      if (raw) {
+        const user = JSON.parse(raw) as { name: string; email: string };
+        this.name = user.name;
+        this.email = user.email;
+        this.handle = user.name.toLowerCase().replace(/\s+/g, '');
+        this.initials = user.name
+          .split(/\s+/)
+          .map((x) => x[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase();
+      }
+    } catch {}
+  }
+  notice = '';
+}

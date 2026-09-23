@@ -8,51 +8,60 @@ type User = { name: string; email: string };
   selector: 'app-root',
   standalone: true,
   imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
-  template: `
-    @if (!user) {
-      <main class="min-h-screen bg-[#f6f5f1] lg:grid lg:grid-cols-[1fr_1fr]">
-        <section class="relative flex min-h-[340px] flex-col justify-between overflow-hidden bg-[#292f28] p-8 text-white sm:p-12 lg:min-h-screen lg:p-16">
-          <a class="relative z-10 flex items-center gap-2 text-lg font-semibold tracking-tight" href="#"><span class="grid size-8 place-items-center rounded-xl bg-[#d5e3bd] text-lg text-[#35432e]">✳</span> career<span class="-ml-2 font-normal text-[#b9c4aa]">space</span></a>
-          <div class="relative z-10 max-w-lg py-10"><div class="mb-5 text-xs font-semibold tracking-[.18em] text-[#c9d3bf]">YOUR NEXT CHAPTER STARTS HERE</div><h1 class="text-5xl leading-[1.06] tracking-tight sm:text-6xl">Make room for <em class="font-serif font-normal text-[#c6d5b2]">what’s next.</em></h1><p class="mt-6 max-w-sm text-base leading-7 text-[#d2d6cd]">One calm place to plan your projects, find work you love, and keep your momentum going.</p></div>
-          <div class="relative z-10 text-sm text-[#d2d6cd]">✳ &nbsp; A little more you, every day.</div><div class="pointer-events-none absolute -bottom-32 -right-24 size-[28rem] rounded-full border border-white/10"></div><div class="pointer-events-none absolute -bottom-16 -right-8 size-[20rem] rounded-full border border-white/10"></div>
-        </section>
-        <section class="flex min-h-screen flex-col bg-white px-6 py-7 sm:px-12 lg:px-20"><div class="flex justify-end gap-2 text-sm text-stone-500"><span>{{ signup ? 'Already have an account?' : 'New to Career Space?' }}</span><button class="font-semibold text-[#4f6546] hover:underline" (click)="signup = !signup">{{ signup ? 'Log in' : 'Sign up' }}</button></div>
-          <div class="mx-auto my-auto w-full max-w-md py-12"><div class="text-xs font-semibold tracking-[.18em] text-[#78876e]">{{ signup ? 'YOUR SPACE IS WAITING' : 'WELCOME BACK' }}</div><h2 class="mt-3 text-3xl font-semibold tracking-tight text-stone-800">{{ signup ? 'Create your account' : 'Good to see you again.' }}</h2><p class="mt-2 text-sm text-stone-500">{{ signup ? 'Start building a career that feels like yours.' : 'Pick up where you left off.' }}</p>
-            <form class="mt-9 space-y-5" (ngSubmit)="authenticate()">@if (signup) {<div><label class="mb-2 block text-sm font-medium text-stone-700" for="name">Your name</label><input class="w-full rounded-xl border border-stone-200 px-4 py-3 outline-none transition focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10" id="name" name="name" [(ngModel)]="name" placeholder="e.g. Alex Morgan" autocomplete="name" required></div>}<div><label class="mb-2 block text-sm font-medium text-stone-700" for="email">Email address</label><input class="w-full rounded-xl border border-stone-200 px-4 py-3 outline-none transition focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10" id="email" name="email" [(ngModel)]="email" type="email" placeholder="you@example.com" autocomplete="email" required></div><div><div class="mb-2 flex justify-between"><label class="text-sm font-medium text-stone-700" for="password">Password</label><a class="text-xs text-[#687c5d] hover:underline" href="#" (click)="$event.preventDefault(); notice = 'Password reset will be available when authentication is connected.'">Forgot password?</a></div><input class="w-full rounded-xl border border-stone-200 px-4 py-3 outline-none transition focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10" id="password" name="password" [(ngModel)]="password" type="password" placeholder="At least 8 characters" [minlength]="signup ? 8 : 1" required></div>@if (notice) {<p class="text-sm text-amber-700">{{ notice }}</p>}<button class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#43563c] px-5 py-3.5 font-medium text-white transition hover:bg-[#35472f]">{{ signup ? 'Create account' : 'Log in' }} <span>↗</span></button></form>
-            <div class="my-6 flex items-center gap-4 text-[10px] font-semibold tracking-widest text-stone-400"><span class="h-px flex-1 bg-stone-200"></span> OR <span class="h-px flex-1 bg-stone-200"></span></div><button class="w-full rounded-xl border border-stone-200 px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50" (click)="notice = 'Connect an identity provider to enable Google sign-in.'"><b class="mr-2 text-base">G</b> Continue with Google</button><p class="mt-7 text-center text-sm text-stone-500">{{ signup ? 'Already part of Career Space?' : 'New to Career Space?' }} <button class="font-semibold text-[#4f6546] hover:underline" (click)="signup = !signup; notice = ''">{{ signup ? 'Log in' : 'Create an account' }}</button></p>
-          </div><p class="text-center text-xs text-stone-400">By continuing, you agree to our <a href="#" class="underline">Terms</a> and <a href="#" class="underline">Privacy Policy</a>.</p>
-        </section>
-      </main>
-    } @else {
-      <div class="min-h-screen bg-[#f7f7f4] text-stone-800">
-        @if (mobileOpen) { <button class="fixed inset-0 z-30 bg-stone-900/30 md:hidden" (click)="mobileOpen = false" aria-label="Close navigation"></button> }
-        <aside class="fixed inset-y-0 left-0 z-40 flex w-[248px] -translate-x-full flex-col border-r border-stone-200/70 bg-white px-4 py-5 transition-transform md:translate-x-0" [class.translate-x-0]="mobileOpen">
-          <a routerLink="/overview" class="mb-9 flex items-center gap-2 px-2 text-lg font-semibold tracking-tight"><span class="grid size-8 place-items-center rounded-xl bg-[#e8eee1] text-[#536649]">✳</span> career<span class="-ml-2 font-normal text-stone-400">space</span></a>
-          <div class="mb-3 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">WORKSPACE</div><nav class="space-y-1" aria-label="Main navigation">
-            <a routerLink="/overview" routerLinkActive="nav-active" class="nav-item"><span>⌂</span> Overview</a><div class="mb-2 mt-7 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR CAREER</div>
-            <a routerLink="/projects" routerLinkActive="nav-active" class="nav-item"><span>▧</span> Projects <b class="ml-auto rounded-full bg-stone-100 px-2 py-0.5 text-[10px] text-stone-500">3</b></a><a routerLink="/jobs" routerLinkActive="nav-active" class="nav-item"><span>◫</span> Jobs <b class="ml-auto rounded-full bg-[#f4e8dd] px-2 py-0.5 text-[10px] text-[#926848]">4</b></a><a routerLink="/calendar" routerLinkActive="nav-active" class="nav-item"><span>▦</span> Calendar</a><a routerLink="/cv" routerLinkActive="nav-active" class="nav-item"><span>▤</span> My CV</a>
-          </nav>
-          <div class="mt-auto rounded-2xl bg-[#f5f6f1] p-4"><div class="text-sm font-semibold">A little progress adds up.</div><p class="mt-1 text-xs leading-5 text-stone-500">You’ve shown up 4 days this week. Keep going.</p><div class="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200"><div class="h-full w-3/5 rounded-full bg-[#809170]"></div></div></div>
-        </aside>
-        <main class="min-h-screen md:pl-[248px]">
-          <header class="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-stone-200/70 bg-white/90 px-5 backdrop-blur sm:px-8 lg:px-10"><div class="flex min-w-0 items-center gap-4"><button class="text-xl text-stone-500 md:hidden" (click)="mobileOpen = !mobileOpen" aria-label="Open navigation">☰</button><a routerLink="/overview" class="flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight"><span class="text-[#617754]">✳</span> career<span class="-ml-2 font-normal text-stone-400">space</span></a><label class="hidden h-10 w-[min(38vw,390px)] items-center gap-2.5 rounded-xl border border-stone-200 bg-[#fbfbf9] px-3 text-stone-400 sm:flex"><span class="text-base">⌕</span><input class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder:text-stone-400" placeholder="Search anything..." [(ngModel)]="search" aria-label="Search"><kbd class="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[10px]">⌘ K</kbd></label></div>
-            <div class="relative flex items-center gap-3"><span class="hidden text-xs text-stone-400 sm:block">{{ todayLabel }}</span><button class="relative grid size-9 place-items-center rounded-xl text-lg text-stone-500 hover:bg-stone-100" (click)="notice = notice ? '' : 'You’re all caught up.'" aria-label="Notifications">♧<i class="absolute right-2 top-2 size-1.5 rounded-full bg-[#c68b68]"></i></button><button class="flex items-center gap-2 rounded-full p-1 pr-2 hover:bg-stone-100" (click)="userMenu = !userMenu" aria-label="User menu"><span class="grid size-8 place-items-center rounded-full bg-[#e9ded1] text-xs font-semibold text-[#735a47]">{{ initials }}</span><span class="hidden max-w-28 truncate text-xs font-medium sm:block">{{ firstName }}</span><span class="text-[10px] text-stone-400">⌄</span></button>@if (userMenu) {<div class="absolute right-0 top-12 w-56 rounded-2xl border border-stone-200 bg-white p-2 shadow-xl"><div class="border-b border-stone-100 px-3 py-2"><div class="text-sm font-semibold">{{ user.name }}</div><div class="mt-0.5 truncate text-xs text-stone-500">{{ user.email }}</div></div><button class="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-stone-600 hover:bg-stone-50" (click)="logout()"><span>↪</span> Sign out</button></div>}</div>
-          </header>
-          @if (notice) { <button class="fixed right-5 top-20 z-50 rounded-xl bg-stone-800 px-4 py-3 text-sm text-white shadow-lg" (click)="notice = ''">{{ notice }} &nbsp; ×</button> }
-          <div class="mx-auto max-w-[1440px] px-5 pb-10 pt-8 sm:px-8 lg:px-10"><router-outlet></router-outlet><footer class="mt-12 flex justify-between border-t border-stone-200/80 pt-5 text-[11px] text-stone-400"><span>Made for your next chapter <b class="text-[#869675]">✳</b></span><span>© 2026 Career Space</span></footer></div>
-        </main>
-      </div>
-    }
-  `
+  templateUrl: './app.component.html',
 })
 export class AppComponent {
   user: User | null = this.readUser();
-  signup = false; mobileOpen = false; userMenu = false; notice = ''; search = '';
-  name = ''; email = ''; password = '';
-  private readUser(): User | null { try { const value = localStorage.getItem('career-space-user'); return value ? JSON.parse(value) as User : null; } catch { return null; } }
-  get firstName(): string { return this.user?.name.trim().split(/\s+/)[0] || 'friend'; }
-  get initials(): string { return this.user?.name.trim().split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'CS'; }
-  get todayLabel(): string { return new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date()); }
-  authenticate(): void { const fallback = this.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()); this.user = { name: this.name.trim() || fallback, email: this.email.trim() }; localStorage.setItem('career-space-user', JSON.stringify(this.user)); this.password = ''; }
-  logout(): void { localStorage.removeItem('career-space-user'); this.user = null; this.password = ''; this.userMenu = false; }
+  signup = false;
+  mobileOpen = false;
+  userMenu = false;
+  notice = '';
+  search = '';
+  name = '';
+  email = '';
+  password = '';
+  private readUser(): User | null {
+    try {
+      const value = localStorage.getItem('career-space-user');
+      return value ? (JSON.parse(value) as User) : null;
+    } catch {
+      return null;
+    }
+  }
+  get firstName(): string {
+    return this.user?.name.trim().split(/\s+/)[0] || 'friend';
+  }
+  get initials(): string {
+    return (
+      this.user?.name
+        .trim()
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'CS'
+    );
+  }
+  get todayLabel(): string {
+    return new Intl.DateTimeFormat('en', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date());
+  }
+  authenticate(): void {
+    const fallback = this.email
+      .split('@')[0]
+      .replace(/[._-]/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    this.user = { name: this.name.trim() || fallback, email: this.email.trim() };
+    localStorage.setItem('career-space-user', JSON.stringify(this.user));
+    this.password = '';
+  }
+  logout(): void {
+    localStorage.removeItem('career-space-user');
+    this.user = null;
+    this.password = '';
+    this.userMenu = false;
+  }
 }

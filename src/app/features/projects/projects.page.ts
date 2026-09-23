@@ -1,9 +1,145 @@
 import { Component } from '@angular/core';
-@Component({ selector: 'app-projects-page', standalone: false, template: `<section><div class="flex flex-wrap items-end justify-between gap-4"><div><div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">MAKE IT REAL ✦</div><h1 class="mt-2 text-3xl font-semibold tracking-tight">Your projects</h1><p class="mt-2 text-sm text-stone-500">A home for the work you’re proud to put your name on.</p></div><button class="rounded-xl bg-[#43563c] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]" (click)="notice = 'Your next project starts with one small step.'">＋ &nbsp; New project</button></div><div class="mt-7 flex gap-2 text-xs"><button class="rounded-full bg-[#e9ede4] px-3 py-2 font-medium text-[#536649]">All projects&nbsp; 3</button><button class="rounded-full border border-stone-200 bg-white px-3 py-2 text-stone-500">In progress&nbsp; 2</button><button class="rounded-full border border-stone-200 bg-white px-3 py-2 text-stone-500">Planning&nbsp; 1</button></div>@if(notice){<p class="mt-4 text-sm text-[#536649]">{{notice}}</p>}<div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">@for (project of projects; track project.name) {<article class="rounded-2xl border border-stone-200/80 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"><div class="flex items-center justify-between"><span class="grid size-11 place-items-center rounded-2xl text-lg" [class]="project.color">{{project.icon}}</span><span class="rounded-full bg-[#e9f0e9] px-2.5 py-1 text-[10px] font-medium text-[#617c68]">{{project.status}}</span></div><h2 class="mt-5 text-lg font-semibold">{{project.name}}</h2><p class="mt-1 min-h-10 text-sm leading-5 text-stone-500">{{project.description}}</p><div class="mt-5 flex justify-between text-[11px] text-stone-400"><span>{{project.category}}</span><span>{{project.due}}</span></div><div class="mt-4 flex justify-between text-xs"><span class="text-stone-500">Progress</span><b>{{project.progress}}%</b></div><div class="mt-2 h-1.5 rounded-full bg-stone-100"><div class="h-full rounded-full bg-[#879778]" [style.width.%]="project.progress"></div></div></article>}</div></section>` })
+
+type FeedType = 'All' | 'Projects' | 'Jobs';
+type Post = {
+  id: number;
+  type: 'Project' | 'Job';
+  category: string;
+  branch: string;
+  author: string;
+  authorInitials: string;
+  avatarTone: string;
+  headline: string;
+  posted: string;
+  title: string;
+  summary: string;
+  details: string;
+  tags: string[];
+  likes: number;
+  comments: number;
+  callToAction: string;
+};
+
+@Component({
+  selector: 'app-projects-page',
+  standalone: false,
+  templateUrl: './projects.page.html',
+})
 export class ProjectsPage {
-  notice=''; projects = [
-    { icon:'✳',color:'bg-[#eeebf7] text-[#766b9d]',name:'Portfolio refresh',description:'A thoughtful home for the work I want to do more of.',category:'Design & personal brand',due:'Due Oct 04',status:'In progress',progress:72 },
-    { icon:'◉',color:'bg-[#f6ece5] text-[#aa7955]',name:'UX case study',description:'Making everyday banking feel a little more human.',category:'Product thinking',due:'Due Oct 12',status:'In progress',progress:46 },
-    { icon:'✦',color:'bg-[#e8f1ed] text-[#688578]',name:'Learn Figma variables',description:'A small skill investment with a big creative payoff.',category:'Skill building',due:'No due date',status:'Planning',progress:28 }
+  notice = '';
+  selectedType: FeedType = 'All';
+  selectedCategory = 'All';
+  selectedBranch = 'All';
+
+  readonly types: FeedType[] = ['All', 'Projects', 'Jobs'];
+  readonly categories = ['All', 'Product design', 'Engineering', 'Marketing', 'Creative'];
+  readonly branches = ['All', 'Remote', 'Belgrade', 'London', 'New York'];
+  readonly popularCategories = [
+    { name: 'Product design', count: 18 },
+    { name: 'Engineering', count: 12 },
+    { name: 'Creative', count: 9 },
+    { name: 'Marketing', count: 7 },
   ];
+
+  readonly posts: Post[] = [
+    {
+      id: 1,
+      type: 'Project',
+      category: 'Product design',
+      branch: 'Belgrade',
+      author: 'Mila Petrović',
+      authorInitials: 'MP',
+      avatarTone: 'bg-[#e8eee1] text-[#536649]',
+      headline: 'Independent designer',
+      posted: '2h ago',
+      title: 'Rethinking the neighborhood market',
+      summary:
+        'A small side project exploring how local shops can feel more connected to their communities.',
+      details:
+        'I’m building a lightweight discovery experience that helps people find independent neighborhood shops. I’ve finished the first round of research and would love feedback from people who work in retail or community design.',
+      tags: ['UX research', 'Figma', 'Community'],
+      likes: 28,
+      comments: 6,
+      callToAction: 'View project',
+    },
+    {
+      id: 2,
+      type: 'Job',
+      category: 'Engineering',
+      branch: 'Remote',
+      author: 'Northstar Studio',
+      authorInitials: 'NS',
+      avatarTone: 'bg-[#e7eef3] text-[#59758b]',
+      headline: 'Product team · Hiring',
+      posted: '5h ago',
+      title: 'Frontend engineer, design systems',
+      summary:
+        'Help us make thoughtful tools for teams doing their best work. Remote-friendly across Europe.',
+      details:
+        'We’re looking for a frontend engineer who enjoys the details: accessible components, solid foundations, and close collaboration with designers. You’ll help shape our shared design system and bring it into production.',
+      tags: ['Angular', 'TypeScript', 'Remote'],
+      likes: 41,
+      comments: 12,
+      callToAction: 'Explore role',
+    },
+    {
+      id: 3,
+      type: 'Project',
+      category: 'Creative',
+      branch: 'London',
+      author: 'Jordan Lee',
+      authorInitials: 'JL',
+      avatarTone: 'bg-[#f0eaf3] text-[#866d8e]',
+      headline: 'Brand designer',
+      posted: '1d ago',
+      title: 'Open-source identity kit for climate groups',
+      summary:
+        'A flexible set of visual tools for grassroots organizations that need a place to start.',
+      details:
+        'The kit includes editable layouts, a simple color system, and templates for social posts and event flyers. I’m looking for a couple of community groups to try it and share what is missing.',
+      tags: ['Branding', 'Open source', 'Climate'],
+      likes: 63,
+      comments: 9,
+      callToAction: 'See the kit',
+    },
+    {
+      id: 4,
+      type: 'Job',
+      category: 'Marketing',
+      branch: 'New York',
+      author: 'Goodwell',
+      authorInitials: 'G',
+      avatarTone: 'bg-[#f6ece5] text-[#aa7955]',
+      headline: 'People-first fintech · Hiring',
+      posted: '1d ago',
+      title: 'Content strategist',
+      summary:
+        'Shape a clearer voice for money tools that make everyday decisions feel less complicated.',
+      details:
+        'You’ll partner with product, research, and support to create useful content across our app and learning hub. We value clear writing, curiosity, and experience turning complex subjects into helpful guidance.',
+      tags: ['Content', 'Fintech', 'Full-time'],
+      likes: 19,
+      comments: 4,
+      callToAction: 'Explore role',
+    },
+  ];
+
+  get filteredPosts(): Post[] {
+    return this.posts.filter((post) => {
+      const typeMatches =
+        this.selectedType === 'All' || post.type === this.selectedType.slice(0, -1);
+      const categoryMatches =
+        this.selectedCategory === 'All' || post.category === this.selectedCategory;
+      const branchMatches = this.selectedBranch === 'All' || post.branch === this.selectedBranch;
+      return typeMatches && categoryMatches && branchMatches;
+    });
+  }
+
+  selectCategory(event: Event): void {
+    this.selectedCategory = (event.target as HTMLSelectElement).value;
+  }
+
+  selectBranch(event: Event): void {
+    this.selectedBranch = (event.target as HTMLSelectElement).value;
+  }
 }

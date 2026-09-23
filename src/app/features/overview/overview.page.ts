@@ -1,16 +1,28 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-@Component({ selector: 'app-overview-page', standalone: false, template: `
-  <section><div class="flex flex-wrap items-end justify-between gap-4"><div><div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">GOOD MORNING <span>✦</span></div><h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-[34px]">Let’s make it count, {{ firstName }}.</h1><p class="mt-2 text-sm text-stone-500">A clear head, a steady pace. Here’s your space for today.</p></div><a routerLink="/calendar" class="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium hover:bg-stone-50">＋ &nbsp; Plan your week</a></div>
-    <div class="relative mt-8 overflow-hidden rounded-[24px] bg-[#313a30] p-7 text-white sm:p-10"><div class="relative z-10 max-w-md"><span class="text-[10px] font-semibold tracking-[.16em] text-[#c7d2bc]">YOUR WEEK, AT A GLANCE</span><h2 class="mt-4 text-4xl leading-tight">Small steps.<br><em class="font-serif font-normal text-[#cbd9b9]">Big direction.</em></h2><p class="mt-3 max-w-xs text-sm leading-6 text-stone-300">You’re building something good. Keep your focus on what matters most today.</p><a routerLink="/projects" class="mt-6 inline-flex items-center gap-3 rounded-lg bg-white/10 px-4 py-2.5 text-sm hover:bg-white/15">See your projects ↗</a></div><div class="absolute -right-12 -top-24 size-80 rounded-full border border-white/10 sm:right-12 sm:top-[-130px] sm:size-[420px]"></div><div class="absolute -right-1 -top-14 size-56 rounded-full border border-white/10 sm:right-24 sm:top-[-72px] sm:size-[300px]"></div><span class="absolute right-[21%] top-[42%] hidden text-6xl text-[#cbd9b9] sm:block">✳</span><span class="absolute right-12 top-8 rotate-6 rounded-full bg-white/10 px-3 py-1 text-xs">show up</span><span class="absolute bottom-8 right-[12%] -rotate-6 rounded-full bg-white/10 px-3 py-1 text-xs">make progress</span></div>
-    <div class="mb-4 mt-9 flex items-end justify-between"><div><div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR OVERVIEW</div><h2 class="mt-1 text-xl font-semibold">A few things in motion</h2></div><a routerLink="/projects" class="text-xs font-medium text-[#66785b] hover:underline">See everything ↗</a></div>
-    <div class="grid gap-4 sm:grid-cols-3"><a routerLink="/projects" class="rounded-2xl border border-stone-200/80 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"><span class="grid size-9 place-items-center rounded-xl bg-[#eeebf7] text-[#766b9d]">▧</span><strong class="mt-4 block text-3xl">03</strong><span class="text-sm text-stone-500">Active projects</span><p class="mt-4 text-xs text-stone-400">● &nbsp;2 moving, 1 just started</p></a><a routerLink="/jobs" class="rounded-2xl border border-stone-200/80 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"><span class="grid size-9 place-items-center rounded-xl bg-[#f6ece5] text-[#aa7955]">◫</span><strong class="mt-4 block text-3xl">04</strong><span class="text-sm text-stone-500">Applications in flight</span><p class="mt-4 text-xs text-stone-400">● &nbsp;1 interview this week</p></a><a routerLink="/calendar" class="rounded-2xl border border-stone-200/80 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"><span class="grid size-9 place-items-center rounded-xl bg-[#e8f1ed] text-[#688578]">▦</span><strong class="mt-4 block text-3xl">02</strong><span class="text-sm text-stone-500">Upcoming this week</span><p class="mt-4 text-xs text-stone-400">● &nbsp;Next up: portfolio review</p></a></div>
-    <div class="mt-5 grid gap-4 lg:grid-cols-2"><div class="rounded-2xl border border-stone-200/80 bg-white p-5"><div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">KEEP THE MOMENTUM</div><h3 class="mt-1 text-lg font-semibold">On your radar</h3>@for (item of agenda; track item.title) {<div class="mt-4 flex items-center gap-3 border-b border-stone-100 pb-4 last:border-0"><span class="grid size-9 place-items-center rounded-xl bg-[#e8f1ed] text-[#688578]">◷</span><div class="flex-1"><b class="block text-sm">{{ item.title }}</b><span class="text-xs text-stone-400">{{ item.when }}</span></div><span class="text-stone-400">↗</span></div>}<a routerLink="/calendar" class="mt-1 inline-block text-xs font-medium text-[#66785b]">Open calendar →</a></div><div class="rounded-2xl border border-stone-200/80 bg-white p-5"><div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">IN THE WORKS</div><h3 class="mt-1 text-lg font-semibold">Project pulse</h3>@for (project of projects; track project.name) {<div class="mt-4"><div class="mb-1.5 flex justify-between text-xs"><span class="font-medium">{{ project.name }}</span><span class="text-stone-400">{{ project.progress }}%</span></div><div class="h-1.5 rounded-full bg-stone-100"><div class="h-full rounded-full bg-[#89987b]" [style.width.%]="project.progress"></div></div></div>}<a routerLink="/projects" class="mt-5 inline-block text-xs font-medium text-[#66785b]">View projects →</a></div></div>
-  </section>` })
+@Component({
+  selector: 'app-overview-page',
+  standalone: false,
+  templateUrl: './overview.page.html',
+})
 export class OverviewPage {
   firstName = 'friend';
-  agenda = [{ title: 'Portfolio review', when: 'Today, 2:30 PM · Personal project' }, { title: 'Follow up with Northstar', when: 'Tomorrow · Job application' }];
-  projects = [{ name: 'Portfolio refresh', progress: 72 }, { name: 'UX case study', progress: 46 }, { name: 'Learn Figma variables', progress: 28 }];
-  constructor() { try { const saved = localStorage.getItem('career-space-user'); this.firstName = saved ? (JSON.parse(saved) as {name:string}).name.split(/\s+/)[0] : 'friend'; } catch {} }
+  agenda = [
+    { title: 'Portfolio review', when: 'Today, 2:30 PM · Personal project' },
+    { title: 'Follow up with Northstar', when: 'Tomorrow · Job application' },
+  ];
+  projects = [
+    { name: 'Portfolio refresh', progress: 72 },
+    { name: 'UX case study', progress: 46 },
+    { name: 'Learn Figma variables', progress: 28 },
+  ];
+  constructor() {
+    try {
+      const saved = localStorage.getItem('career-space-user');
+      this.firstName = saved
+        ? (JSON.parse(saved) as { name: string }).name.split(/\s+/)[0]
+        : 'friend';
+    } catch {}
+  }
 }

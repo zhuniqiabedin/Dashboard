@@ -1,3 +1,35 @@
 import { Component } from '@angular/core';
-@Component({ selector: 'app-calendar-page', standalone: false, template: `<section><div class="flex flex-wrap items-end justify-between gap-4"><div><div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">KEEP A GOOD RHYTHM ✦</div><h1 class="mt-2 text-3xl font-semibold tracking-tight">Your calendar</h1><p class="mt-2 text-sm text-stone-500">Make time for the things that move you forward.</p></div><button class="rounded-xl bg-[#43563c] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]" (click)="notice='New event form coming soon.'">＋ &nbsp; Add event</button></div>@if(notice){<p class="mt-4 text-sm text-[#536649]">{{notice}}</p>}<div class="mt-7 grid gap-5 lg:grid-cols-[1.7fr_1fr]"><section class="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-6"><div class="mb-5 flex items-center gap-3"><button class="grid size-8 place-items-center rounded-lg border border-stone-200 hover:bg-stone-50" (click)="shift(-1)">‹</button><h2 class="min-w-40 text-center text-lg font-semibold">{{monthTitle}}</h2><button class="grid size-8 place-items-center rounded-lg border border-stone-200 hover:bg-stone-50" (click)="shift(1)">›</button><button class="ml-auto rounded-lg border border-stone-200 px-3 py-2 text-xs hover:bg-stone-50" (click)="offset=0">Today</button></div><div class="grid grid-cols-7">@for (day of weekdays; track day) {<div class="py-2 text-center text-[9px] font-semibold tracking-wider text-stone-400">{{day}}</div>}@for (day of days; track $index) {<button class="relative flex min-h-16 flex-col items-center border-t border-stone-100 py-2 text-sm hover:bg-[#f7f8f4] sm:min-h-20" [class.text-stone-300]="day<1||day>monthLength" [class.font-semibold]="day===23&&offset===0" (click)="selected=day">{{day<1?prevLength+day:day>monthLength?day-monthLength:day}}@if(day===23&&offset===0){<i class="mt-1 size-1.5 rounded-full bg-[#819473]"></i>}@if(day===25||day===29){<i class="mt-1 size-1.5 rounded-full bg-[#a78bb6]"></i>}</button>}</div></section><section class="rounded-2xl border border-stone-200/80 bg-white p-5"><div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR AGENDA</div><h2 class="mt-1 text-lg font-semibold">{{selected===23&&offset===0?'Today':'Selected day, '+selected}}</h2><div class="mt-6 space-y-5"><div class="flex gap-3"><time class="w-12 text-right text-xs font-medium">2:30<small class="ml-1 text-stone-400">PM</small></time><i class="h-12 w-0.5 rounded-full bg-[#8bab9b]"></i><div><b class="text-sm">Portfolio review</b><p class="mt-1 text-xs text-stone-400">Personal project · 45 min</p></div></div><div class="flex gap-3"><time class="w-12 text-right text-xs font-medium">4:00<small class="ml-1 text-stone-400">PM</small></time><i class="h-12 w-0.5 rounded-full bg-[#b39bc0]"></i><div><b class="text-sm">Walk &amp; reset</b><p class="mt-1 text-xs text-stone-400">Make a little space · 30 min</p></div></div></div><p class="mt-8 border-t border-stone-100 pt-4 text-xs text-[#687c5d]">✳ &nbsp; Leave a little breathing room between the big things.</p></section></div></section>` })
-export class CalendarPage { notice=''; offset=0; selected=23; weekdays=['MON','TUE','WED','THU','FRI','SAT','SUN']; get date():Date{return new Date(2026,8+this.offset,1)} get monthTitle():string{return new Intl.DateTimeFormat('en',{month:'long',year:'numeric'}).format(this.date)} get monthLength():number{return new Date(this.date.getFullYear(),this.date.getMonth()+1,0).getDate()} get prevLength():number{return new Date(this.date.getFullYear(),this.date.getMonth(),0).getDate()} get days():number[]{const start=(this.date.getDay()+6)%7;return Array.from({length:35},(_,i)=>i-start+1)} shift(value:number):void{this.offset+=value;this.selected=1;} }
+@Component({
+  selector: 'app-calendar-page',
+  standalone: false,
+  templateUrl: './calendar.page.html',
+})
+export class CalendarPage {
+  notice = '';
+  offset = 0;
+  selected = 23;
+  weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  get date(): Date {
+    return new Date(2026, 8 + this.offset, 1);
+  }
+  get monthTitle(): string {
+    return new Intl.DateTimeFormat('en', {
+      month: 'long',
+      year: 'numeric',
+    }).format(this.date);
+  }
+  get monthLength(): number {
+    return new Date(this.date.getFullYear(), this.date.getMonth() + 1, 0).getDate();
+  }
+  get prevLength(): number {
+    return new Date(this.date.getFullYear(), this.date.getMonth(), 0).getDate();
+  }
+  get days(): number[] {
+    const start = (this.date.getDay() + 6) % 7;
+    return Array.from({ length: 35 }, (_, i) => i - start + 1);
+  }
+  shift(value: number): void {
+    this.offset += value;
+    this.selected = 1;
+  }
+}
