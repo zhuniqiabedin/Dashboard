@@ -13,7 +13,7 @@
     >
       <div class="flex items-start justify-between gap-4">
         <div>
-          <div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">
+          <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">
             YOUR WORKSPACE
           </div>
           <h2 id="new-project-title" class="mt-2 text-2xl font-semibold tracking-tight">
@@ -39,7 +39,7 @@
             id="project-title"
             name="projectTitle"
             [(ngModel)]="draft.title"
-            class="w-full rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+            class="w-full rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
             placeholder="What are you working on?"
             maxlength="100"
             required
@@ -54,7 +54,7 @@
               id="project-category"
               name="projectCategory"
               [(ngModel)]="draft.category"
-              class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-[#839273]"
+              class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2]"
             >
               @for (category of categories; track category) {
               <option [value]="category">{{ category }}</option>
@@ -69,7 +69,7 @@
               id="project-branch"
               name="projectBranch"
               [(ngModel)]="draft.branch"
-              class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-[#839273]"
+              class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2]"
             >
               @for (branch of branches; track branch) {
               <option [ngValue]="branch">{{ branchLabel(branch) }}</option>
@@ -85,7 +85,7 @@
             id="project-summary"
             name="projectSummary"
             [(ngModel)]="draft.summary"
-            class="w-full resize-y rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+            class="w-full resize-y rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
             placeholder="Add a short description..."
             rows="2"
             maxlength="220"
@@ -100,7 +100,7 @@
             id="project-details"
             name="projectDetails"
             [(ngModel)]="draft.details"
-            class="w-full resize-y rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+            class="w-full resize-y rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
             placeholder="Add notes, goals, or next steps..."
             rows="3"
             maxlength="1000"
@@ -116,7 +116,7 @@
           </button>
           <button
             type="submit"
-            class="rounded-xl bg-[#43563c] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]"
+            class="rounded-xl bg-[#0a66c2] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
           >
             Save project
           </button>
@@ -128,12 +128,12 @@
 
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
-      <div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">YOUR WORKSPACE ✦</div>
+      <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">YOUR WORKSPACE ✦</div>
       <h1 class="mt-2 text-3xl font-semibold tracking-tight">My projects</h1>
       <p class="mt-2 text-sm text-stone-500">Keep your own ideas and work moving forward.</p>
     </div>
     <button
-      class="rounded-xl bg-[#43563c] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]"
+      class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
       (click)="openNewProjectDialog()"
     >
       ＋ &nbsp; New project
@@ -141,15 +141,15 @@
   </div>
 
   @if (notice) {
-  <p class="mt-4 rounded-xl bg-[#eef1e9] px-4 py-3 text-sm text-[#536649]">{{ notice }}</p>
+  <p class="mt-4 rounded-xl bg-[#e8f3ff] px-4 py-3 text-sm text-[#0a66c2]">{{ notice }}</p>
   }
 
   <div class="mt-7 flex flex-wrap gap-2">
     @for (status of statuses; track status) {
     <button
       class="rounded-full px-3 py-2 text-xs font-medium transition"
-      [class.bg-[#e9ede4]]="selectedStatus === status"
-      [class.text-[#536649]]="selectedStatus === status"
+      [class.bg-[#e8f3ff]]="selectedStatus === status"
+      [class.text-[#0a66c2]]="selectedStatus === status"
       [class.border]="selectedStatus !== status"
       [class.border-stone-200]="selectedStatus !== status"
       [class.bg-white]="selectedStatus !== status"
@@ -165,14 +165,14 @@
   <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
     @for (project of filteredProjects; track project.id) {
     <article
-      class="group relative isolate min-h-[280px] overflow-hidden rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm transition duration-200 focus-within:z-10 focus-within:border-[#cbd4c2] focus-within:shadow-xl hover:z-10 hover:-translate-y-1 hover:border-[#cbd4c2] hover:shadow-xl"
+      class="group relative isolate min-h-[280px] overflow-hidden rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm transition duration-200 focus-within:z-10 focus-within:border-[#b8d8f5] focus-within:shadow-xl hover:z-10 hover:-translate-y-1 hover:border-[#b8d8f5] hover:shadow-xl"
     >
       <div class="flex items-center justify-between">
         <span
           class="grid size-11 place-items-center rounded-2xl bg-[#eeebf7] text-lg text-[#766b9d]"
           >✳</span
         >
-        <span class="rounded-full bg-[#e9f0e9] px-2.5 py-1 text-[10px] font-medium text-[#617c68]">
+        <span class="rounded-full bg-[#e8f3ff] px-2.5 py-1 text-[10px] font-medium text-[#617c68]">
           {{ project.status }}
         </span>
       </div>
@@ -190,14 +190,14 @@
         <span class="text-stone-500">Progress</span><b>{{ project.progress }}%</b>
       </div>
       <div class="mt-2 h-1.5 rounded-full bg-stone-100">
-        <div class="h-full rounded-full bg-[#879778]" [style.width.%]="project.progress"></div>
+        <div class="h-full rounded-full bg-[#0a66c2]" [style.width.%]="project.progress"></div>
       </div>
 
       <div
-        class="pointer-events-none absolute inset-0 flex flex-col justify-between bg-[#30382f]/95 p-6 text-white opacity-0 transition duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+        class="pointer-events-none absolute inset-0 flex flex-col justify-between bg-[#004182]/95 p-6 text-white opacity-0 transition duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <div>
-          <div class="text-[10px] font-semibold tracking-[.16em] text-[#c5d2b9]">
+          <div class="text-[10px] font-semibold tracking-[.16em] text-[#cfe5ff]">
             {{ project.category.toUpperCase() }} · {{ branchLabel(project.branch).toUpperCase() }}
           </div>
           <h3 class="mt-4 text-xl leading-tight font-semibold">{{ project.title }}</h3>
@@ -216,7 +216,7 @@
     <div
       class="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center md:col-span-2 xl:col-span-3"
     >
-      <div class="text-2xl text-[#819473]">✳</div>
+      <div class="text-2xl text-[#0a66c2]">✳</div>
       <h2 class="mt-3 font-semibold">No projects in this view</h2>
       <p class="mt-1 text-sm text-stone-500">Create a project to get started.</p>
     </div>

@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-type User = { name: string; email: string };
+type User = { name: string; email: string; photo?: string };
 
 @Component({
   selector: 'app-root',
@@ -27,6 +27,10 @@ export class AppComponent {
     } catch {
       return null;
     }
+  }
+  @HostListener('window:career-space-profile-updated')
+  refreshUser(): void {
+    this.user = this.readUser();
   }
   get firstName(): string {
     return this.user?.name.trim().split(/\s+/)[0] || 'friend';

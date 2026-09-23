@@ -1,0 +1,239 @@
+<section>
+  <div class="mb-7">
+    <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">
+      YOUR PROFESSIONAL STORY
+    </div>
+    <h1 class="mt-2 text-3xl font-semibold tracking-tight">My profile</h1>
+    <p class="mt-2 text-sm text-stone-500">
+      Share a little more about who you are and what you do.
+    </p>
+  </div>
+
+  @if (notice) {
+  <p class="mb-5 rounded-xl bg-[#e8f3ff] px-4 py-3 text-sm text-[#0a66c2]">{{ notice }}</p>
+  }
+
+  <div class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <form class="space-y-5" (ngSubmit)="saveProfile()">
+      <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <div class="h-28 bg-gradient-to-r from-[#0a66c2] to-[#70b5f9]"></div>
+        <div class="px-5 pb-6 sm:px-8">
+          <div class="-mt-12 flex flex-wrap items-end justify-between gap-4">
+            <div
+              class="grid size-24 place-items-center overflow-hidden rounded-full border-4 border-white bg-[#e8f3ff] text-2xl font-semibold text-[#0a66c2] shadow-sm"
+            >
+              @if (profile.photo) {
+              <img
+                [src]="profile.photo"
+                alt="Profile picture preview"
+                class="size-full object-cover"
+              />
+              } @else { {{ initials }} }
+            </div>
+            <div class="flex gap-2 pb-1">
+              <label
+                class="cursor-pointer rounded-full border border-[#0a66c2] px-4 py-2 text-xs font-semibold text-[#0a66c2] hover:bg-[#e8f3ff]"
+              >
+                Add photo
+                <input
+                  class="sr-only"
+                  type="file"
+                  accept="image/*"
+                  (change)="onPictureSelected($event)"
+                />
+              </label>
+              @if (profile.photo) {
+              <button
+                type="button"
+                class="rounded-full px-3 py-2 text-xs text-stone-500 hover:bg-stone-100"
+                (click)="removePicture()"
+              >
+                Remove
+              </button>
+              }
+            </div>
+          </div>
+          @if (pictureError) {
+          <p class="mt-3 text-xs text-rose-600">{{ pictureError }}</p>
+          }
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="profile-name" class="mb-1.5 block text-sm font-medium">Name</label>
+              <input
+                id="profile-name"
+                name="name"
+                [(ngModel)]="profile.name"
+                required
+                class="profile-input"
+                placeholder="Your name"
+              />
+            </div>
+            <div>
+              <label for="profile-headline" class="mb-1.5 block text-sm font-medium"
+                >Professional headline</label
+              >
+              <input
+                id="profile-headline"
+                name="headline"
+                [(ngModel)]="profile.headline"
+                class="profile-input"
+                placeholder="e.g. Product designer"
+              />
+            </div>
+            <div>
+              <label for="profile-email" class="mb-1.5 block text-sm font-medium">Email</label>
+              <input
+                id="profile-email"
+                name="email"
+                [(ngModel)]="profile.email"
+                type="email"
+                class="profile-input"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label for="profile-location" class="mb-1.5 block text-sm font-medium"
+                >Location</label
+              >
+              <input
+                id="profile-location"
+                name="location"
+                [(ngModel)]="profile.location"
+                class="profile-input"
+                placeholder="City, country"
+              />
+            </div>
+            <div>
+              <label for="profile-branch" class="mb-1.5 block text-sm font-medium"
+                >Industry branch</label
+              >
+              <select
+                id="profile-branch"
+                name="branch"
+                [(ngModel)]="profile.branch"
+                class="profile-input bg-white"
+              >
+                @for (branch of branches; track branch) {
+                <option [ngValue]="branch">{{ branchLabel(branch) }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="profile-website" class="mb-1.5 block text-sm font-medium"
+                >Website or portfolio</label
+              >
+              <input
+                id="profile-website"
+                name="website"
+                [(ngModel)]="profile.website"
+                type="url"
+                class="profile-input"
+                placeholder="https://"
+              />
+            </div>
+          </div>
+          <div class="mt-4">
+            <label for="profile-about" class="mb-1.5 block text-sm font-medium">About</label>
+            <textarea
+              id="profile-about"
+              name="about"
+              [(ngModel)]="profile.about"
+              class="profile-input resize-y"
+              rows="4"
+              maxlength="1200"
+              placeholder="Tell people about your experience, interests, and goals."
+            ></textarea>
+            <p class="mt-1 text-right text-[11px] text-stone-400">
+              {{ profile.about.length }}/1200
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-8">
+        <h2 class="text-lg font-semibold">Experience &amp; education</h2>
+        <p class="mt-1 text-sm text-stone-500">Add a short overview of your background.</p>
+        <div class="mt-5 space-y-4">
+          <div>
+            <label for="profile-experience" class="mb-1.5 block text-sm font-medium"
+              >Experience</label
+            >
+            <textarea
+              id="profile-experience"
+              name="experience"
+              [(ngModel)]="profile.experience"
+              class="profile-input resize-y"
+              rows="3"
+              placeholder="Roles, companies, and notable work"
+            ></textarea>
+          </div>
+          <div>
+            <label for="profile-education" class="mb-1.5 block text-sm font-medium"
+              >Education</label
+            >
+            <textarea
+              id="profile-education"
+              name="education"
+              [(ngModel)]="profile.education"
+              class="profile-input resize-y"
+              rows="2"
+              placeholder="Schools, courses, and certifications"
+            ></textarea>
+          </div>
+          <div>
+            <label for="profile-skills" class="mb-1.5 block text-sm font-medium">Skills</label>
+            <input
+              id="profile-skills"
+              name="skills"
+              [(ngModel)]="profile.skills"
+              class="profile-input"
+              placeholder="Design, research, communication"
+            />
+            <p class="mt-1 text-[11px] text-stone-400">Separate skills with commas.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="rounded-full bg-[#0a66c2] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#004182]"
+        >
+          Save profile
+        </button>
+      </div>
+    </form>
+
+    <aside class="space-y-4 xl:sticky xl:top-24">
+      <section class="rounded-2xl border border-stone-200 bg-white p-5">
+        <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">PROFILE PREVIEW</div>
+        <div class="mt-4 flex items-center gap-3">
+          <div
+            class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#0a66c2]"
+          >
+            @if (profile.photo) {
+            <img [src]="profile.photo" alt="Profile picture" class="size-full object-cover" />
+            } @else { {{ initials }} }
+          </div>
+          <div class="min-w-0">
+            <h2 class="truncate font-semibold">{{ profile.name || 'Your name' }}</h2>
+            <p class="mt-0.5 truncate text-xs text-stone-500">
+              {{ profile.headline || 'Your professional headline' }}
+            </p>
+          </div>
+        </div>
+        @if (profile.location || profile.branch !== 'Other') {
+        <p class="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500">
+          {{ profile.location }} @if (profile.location && profile.branch !== 'Other') { · } @if
+          (profile.branch !== 'Other') { {{ branchLabel(profile.branch) }} }
+        </p>
+        } @if (profile.about) {
+        <p class="mt-3 line-clamp-5 text-sm leading-6 text-stone-600">{{ profile.about }}</p>
+        }
+      </section>
+      <p class="px-2 text-xs leading-5 text-stone-400">
+        Your profile details and photo stay in this browser until you choose to share them.
+      </p>
+    </aside>
+  </div>
+</section>

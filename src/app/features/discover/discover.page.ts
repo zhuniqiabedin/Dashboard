@@ -56,7 +56,7 @@ export class DiscoverPage {
       branch: Branches.Trade,
       author: 'Mila Petrović',
       authorInitials: 'MP',
-      avatarTone: 'bg-[#e8eee1] text-[#536649]',
+      avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
       headline: 'Independent designer',
       posted: '2h ago',
       title: 'Rethinking the neighborhood market',

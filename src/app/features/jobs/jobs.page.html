@@ -1,7 +1,7 @@
 <section>
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
-      <div class="text-[10px] font-semibold tracking-[.16em] text-[#7e8d72]">
+      <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">
         GOOD THINGS TAKE A LITTLE TIME ✦
       </div>
       <h1 class="mt-2 text-3xl font-semibold tracking-tight">Your job search</h1>
@@ -10,14 +10,14 @@
       </p>
     </div>
     <button
-      class="rounded-xl bg-[#43563c] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#35472f]"
+      class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
       (click)="notice='Job tracking is ready for your next application.'"
     >
       ＋ &nbsp; Add application
     </button>
   </div>
   @if(notice){
-  <p class="mt-4 text-sm text-[#536649]">{{notice}}</p>
+  <p class="mt-4 text-sm text-[#0a66c2]">{{notice}}</p>
   }
   <div class="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
     @for (stat of stats; track stat.label) {
@@ -33,7 +33,7 @@
       <button class="text-xs text-stone-500">Recently updated⌄</button>
     </div>
     <div
-      class="hidden grid-cols-[2fr_1fr_1fr_1fr] border-y border-stone-100 bg-[#fbfbf9] px-5 py-3 text-[9px] font-semibold tracking-wider text-stone-400 sm:grid"
+      class="hidden grid-cols-[2fr_1fr_1fr_1fr] border-y border-stone-100 bg-[#ffffff] px-5 py-3 text-[9px] font-semibold tracking-wider text-stone-400 sm:grid"
     >
       <span>ROLE &amp; COMPANY</span><span>STATUS</span><span>APPLIED</span><span>CONTACT</span>
     </div>

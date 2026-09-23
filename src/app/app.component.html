@@ -1,26 +1,26 @@
 @if (!user) {
-  <main class="min-h-screen bg-[#f6f5f1] lg:grid lg:grid-cols-[1fr_1fr]">
+  <main class="min-h-screen bg-[#ffffff] lg:grid lg:grid-cols-[1fr_1fr]">
     <section
-      class="relative flex min-h-[340px] flex-col justify-between overflow-hidden bg-[#292f28] p-8 text-white sm:p-12 lg:min-h-screen lg:p-16"
+      class="relative flex min-h-[340px] flex-col justify-between overflow-hidden bg-[#004182] p-8 text-white sm:p-12 lg:min-h-screen lg:p-16"
     >
       <a class="relative z-10 flex items-center gap-2 text-lg font-semibold tracking-tight" href="#"
-        ><span class="grid size-8 place-items-center rounded-xl bg-[#d5e3bd] text-lg text-[#35432e]"
+        ><span class="grid size-8 place-items-center rounded-xl bg-[#e8f3ff] text-lg text-[#004182]"
           >✳</span
         >
-        career<span class="-ml-2 font-normal text-[#b9c4aa]">space</span></a
+        career<span class="-ml-2 font-normal text-[#dcecff]">space</span></a
       >
       <div class="relative z-10 max-w-lg py-10">
-        <div class="mb-5 text-xs font-semibold tracking-[.18em] text-[#c9d3bf]">
+        <div class="mb-5 text-xs font-semibold tracking-[.18em] text-[#dcecff]">
           YOUR NEXT CHAPTER STARTS HERE
         </div>
         <h1 class="text-5xl leading-[1.06] tracking-tight sm:text-6xl">
-          Make room for <em class="font-serif font-normal text-[#c6d5b2]">what’s next.</em>
+          Make room for <em class="font-serif font-normal text-[#cfe5ff]">what’s next.</em>
         </h1>
-        <p class="mt-6 max-w-sm text-base leading-7 text-[#d2d6cd]">
+        <p class="mt-6 max-w-sm text-base leading-7 text-[#e5effa]">
           One calm place to plan your projects, find work you love, and keep your momentum going.
         </p>
       </div>
-      <div class="relative z-10 text-sm text-[#d2d6cd]">✳ &nbsp; A little more you, every day.</div>
+      <div class="relative z-10 text-sm text-[#e5effa]">✳ &nbsp; A little more you, every day.</div>
       <div
         class="pointer-events-none absolute -right-24 -bottom-32 size-[28rem] rounded-full border border-white/10"
       ></div>
@@ -31,12 +31,12 @@
     <section class="flex min-h-screen flex-col bg-white px-6 py-7 sm:px-12 lg:px-20">
       <div class="flex justify-end gap-2 text-sm text-stone-500">
         <span>{{ signup ? 'Already have an account?' : 'New to Career Space?' }}</span
-        ><button class="font-semibold text-[#4f6546] hover:underline" (click)="signup = !signup">
+        ><button class="font-semibold text-[#0a66c2] hover:underline" (click)="signup = !signup">
           {{ signup ? 'Log in' : 'Sign up' }}
         </button>
       </div>
       <div class="mx-auto my-auto w-full max-w-md py-12">
-        <div class="text-xs font-semibold tracking-[.18em] text-[#78876e]">
+        <div class="text-xs font-semibold tracking-[.18em] text-[#5e8fc4]">
           {{ signup ? 'YOUR SPACE IS WAITING' : 'WELCOME BACK' }}
         </div>
         <h2 class="mt-3 text-3xl font-semibold tracking-tight text-stone-800">
@@ -55,7 +55,7 @@
               <label class="mb-2 block text-sm font-medium text-stone-700" for="name"
                 >Your name</label
               ><input
-                class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+                class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
                 id="name"
                 name="name"
                 [(ngModel)]="name"
@@ -69,7 +69,7 @@
             <label class="mb-2 block text-sm font-medium text-stone-700" for="email"
               >Email address</label
             ><input
-              class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+              class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
               id="email"
               name="email"
               [(ngModel)]="email"
@@ -83,7 +83,7 @@
             <div class="mb-2 flex justify-between">
               <label class="text-sm font-medium text-stone-700" for="password">Password</label
               ><a
-                class="text-xs text-[#687c5d] hover:underline"
+                class="text-xs text-[#0a66c2] hover:underline"
                 href="#"
                 (click)="
                   $event.preventDefault();
@@ -93,7 +93,7 @@
               >
             </div>
             <input
-              class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#839273] focus:ring-4 focus:ring-[#839273]/10"
+              class="w-full rounded-xl border border-stone-200 px-4 py-3 transition outline-none focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
               id="password"
               name="password"
               [(ngModel)]="password"
@@ -107,7 +107,7 @@
             <p class="text-sm text-amber-700">{{ notice }}</p>
           }
           <button
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#43563c] px-5 py-3.5 font-medium text-white transition hover:bg-[#35472f]"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a66c2] px-5 py-3.5 font-medium text-white transition hover:bg-[#004182]"
           >
             {{ signup ? 'Create account' : 'Log in' }} <span>↗</span>
           </button>
@@ -127,7 +127,7 @@
         <p class="mt-7 text-center text-sm text-stone-500">
           {{ signup ? 'Already part of Career Space?' : 'New to Career Space?' }}
           <button
-            class="font-semibold text-[#4f6546] hover:underline"
+            class="font-semibold text-[#0a66c2] hover:underline"
             (click)="signup = !signup; notice = ''"
           >
             {{ signup ? 'Log in' : 'Create an account' }}
@@ -141,7 +141,7 @@
     </section>
   </main>
 } @else {
-  <div class="min-h-screen bg-[#f7f7f4] text-stone-800">
+  <div class="min-h-screen bg-[#ffffff] text-stone-800">
     @if (mobileOpen) {
       <button
         class="fixed inset-0 z-30 bg-stone-900/30 md:hidden"
@@ -156,7 +156,7 @@
       <a
         routerLink="/overview"
         class="mb-9 flex items-center gap-2 px-2 text-lg font-semibold tracking-tight"
-        ><span class="grid size-8 place-items-center rounded-xl bg-[#e8eee1] text-[#536649]"
+        ><span class="grid size-8 place-items-center rounded-xl bg-[#e8f3ff] text-[#0a66c2]"
           >✳</span
         >
         career<span class="-ml-2 font-normal text-stone-400">space</span></a
@@ -185,13 +185,13 @@
           ><span>▦</span> Calendar</a
         ><a routerLink="/cv" routerLinkActive="nav-active" class="nav-item"><span>▤</span> My CV</a>
       </nav>
-      <div class="mt-auto rounded-2xl bg-[#f5f6f1] p-4">
+      <div class="mt-auto rounded-2xl bg-[#f3f8fc] p-4">
         <div class="text-sm font-semibold">A little progress adds up.</div>
         <p class="mt-1 text-xs leading-5 text-stone-500">
           You’ve shown up 4 days this week. Keep going.
         </p>
         <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200">
-          <div class="h-full w-3/5 rounded-full bg-[#809170]"></div>
+          <div class="h-full w-3/5 rounded-full bg-[#0a66c2]"></div>
         </div>
       </div>
     </aside>
@@ -209,12 +209,12 @@
           ><a
             routerLink="/overview"
             class="flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight"
-            ><span class="text-[#617754]">✳</span> career<span
+            ><span class="text-[#0a66c2]">✳</span> career<span
               class="-ml-2 font-normal text-stone-400"
               >space</span
             ></a
           ><label
-            class="hidden h-10 w-[min(38vw,390px)] items-center gap-2.5 rounded-xl border border-stone-200 bg-[#fbfbf9] px-3 text-stone-400 sm:flex"
+            class="hidden h-10 w-[min(38vw,390px)] items-center gap-2.5 rounded-xl border border-stone-200 bg-[#ffffff] px-3 text-stone-400 sm:flex"
             ><span class="text-base">⌕</span
             ><input
               class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder:text-stone-400"
@@ -226,7 +226,7 @@
             ></label
           ><a
             routerLink="/discover"
-            routerLinkActive="bg-[#eef1e9] text-[#536649]"
+            routerLinkActive="bg-[#e8f3ff] text-[#0a66c2]"
             class="hidden shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-50 sm:flex"
             aria-label="Discover projects and jobs"
           >
@@ -247,8 +247,13 @@
             aria-label="User menu"
           >
             <span
-              class="grid size-8 place-items-center rounded-full bg-[#e9ded1] text-xs font-semibold text-[#735a47]"
-              >{{ initials }}</span
+              class="grid size-8 place-items-center overflow-hidden rounded-full bg-[#e8f3ff] text-xs font-semibold text-[#0a66c2]"
+            >
+              @if (user.photo) {
+                <img [src]="user.photo" alt="" class="size-full object-cover" />
+              } @else {
+                {{ initials }}
+              }</span
             ><span class="hidden max-w-28 truncate text-xs font-medium sm:block">{{
               firstName
             }}</span
@@ -262,6 +267,13 @@
                 <div class="text-sm font-semibold">{{ user.name }}</div>
                 <div class="mt-0.5 truncate text-xs text-stone-500">{{ user.email }}</div>
               </div>
+              <a
+                routerLink="/profile"
+                class="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-stone-600 hover:bg-stone-50"
+                (click)="userMenu = false"
+              >
+                <span>◎</span> My profile
+              </a>
               <button
                 class="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-stone-600 hover:bg-stone-50"
                 (click)="logout()"
@@ -285,7 +297,7 @@
         <footer
           class="mt-12 flex justify-between border-t border-stone-200/80 pt-5 text-[11px] text-stone-400"
         >
-          <span>Made for your next chapter <b class="text-[#869675]">✳</b></span
+          <span>Made for your next chapter <b class="text-[#0a66c2]">✳</b></span
           ><span>© 2026 Career Space</span>
         </footer>
       </div>

@@ -33,16 +33,19 @@
     @apply w-5 text-center text-lg leading-none text-stone-400;
   }
   .nav-item.nav-active {
-    @apply bg-[#eef1e9] text-[#536649];
+    @apply bg-[#e8f3ff] text-[#0a66c2];
   }
   .nav-item.nav-active > span:first-child {
-    @apply text-[#6c805f];
+    @apply text-[#0a66c2];
+  }
+  .profile-input {
+    @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-stone-800 transition outline-none placeholder:text-stone-400 focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10;
   }
   .cv-section {
     @apply mt-6;
   }
   .cv-section h3 {
-    @apply mb-2 text-[10px] font-semibold tracking-[.14em] text-[#78876d];
+    @apply mb-2 text-[10px] font-semibold tracking-[.14em] text-[#5e8fc4];
   }
   .cv-section p {
     @apply text-sm leading-6 text-stone-600;
@@ -57,6 +60,6 @@
     @apply px-1 not-italic;
   }
   .skill {
-    @apply rounded-full bg-[#f2f3ef] px-3 py-1.5 text-xs text-stone-600;
+    @apply rounded-full bg-[#f3f8fc] px-3 py-1.5 text-xs text-stone-600;
   }
 }

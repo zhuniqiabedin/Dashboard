@@ -11,7 +11,7 @@ export class JobsPage {
   jobs = [
     {
       mark: 'N',
-      color: 'bg-[#e8eee1] text-[#536649]',
+      color: 'bg-[#e8f3ff] text-[#0a66c2]',
       role: 'Product Designer',
       company: 'Northstar',
       location: 'Remote',

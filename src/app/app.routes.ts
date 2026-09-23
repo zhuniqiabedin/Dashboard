@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/discover/discover.module').then((m) => m.DiscoverModule),
   },
   {
+    path: 'profile',
+    loadChildren: () => import('./features/profile/profile.module').then((m) => m.ProfileModule),
+  },
+  {
     path: 'jobs',
     loadChildren: () => import('./features/jobs/jobs.module').then((m) => m.JobsModule),
   },
