@@ -31,7 +31,7 @@ export class ProjectsPage {
   readonly branches = Object.values(Branches).filter((branch) => branch !== Branches.All);
   draft: ProjectDraft = this.emptyDraft();
 
-  projects: Project[] = [
+  private readonly starterProjects: Project[] = [
     {
       id: 1,
       title: 'Portfolio refresh',
@@ -66,6 +66,7 @@ export class ProjectsPage {
       progress: 28,
     },
   ];
+  projects: Project[] = this.loadProjects();
 
   get filteredProjects(): Project[] {
     return this.projects.filter(
@@ -98,8 +99,16 @@ export class ProjectsPage {
       status: 'Planning',
       progress: 0,
     });
+    let savedLocally = true;
+    try {
+      localStorage.setItem('career-space-projects', JSON.stringify(this.projects));
+    } catch {
+      savedLocally = false;
+    }
     this.selectedStatus = 'All';
-    this.notice = 'Your project was added to your list.';
+    this.notice = savedLocally
+      ? 'Your project was added to your list.'
+      : 'Your project was added for this session. Local storage is unavailable.';
     this.closeNewProjectDialog();
   }
 
@@ -121,5 +130,15 @@ export class ProjectsPage {
       category: this.categories[0],
       branch: Branches.Other,
     };
+  }
+
+  private loadProjects(): Project[] {
+    try {
+      const savedProjects = localStorage.getItem('career-space-projects');
+      if (savedProjects) return JSON.parse(savedProjects) as Project[];
+    } catch {
+      // Use the starter projects if local storage is unavailable or invalid.
+    }
+    return this.starterProjects.map((project) => ({ ...project }));
   }
 }
