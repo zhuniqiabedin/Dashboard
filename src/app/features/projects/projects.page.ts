@@ -1,11 +1,37 @@
 import { Component } from '@angular/core';
 
+export enum Branches {
+  All = 'All',
+  Automotive_Industry = 'Automotive_Industry',
+  Construction_RealEstate = 'Construction_RealEstate',
+  Education = 'Education',
+  Service = 'Service',
+  Energy_Industry = 'Energy_Industry',
+  Finance_Marketing_Insurance = 'Finance_Marketing_Insurance',
+  Trade = 'Trade',
+  Hotels_Restaurants = 'Hotels_Restaurants',
+  Industry = 'Industry',
+  IT_Telecommunications = 'IT_Telecommunications',
+  Agriculture = 'Agriculture',
+  Media_Internet = 'Media_Internet',
+  Medicine_Health = 'Medicine_Health',
+  Fashion_Beauty = 'Fashion_Beauty',
+  Food_Beverage = 'Food_Beverage',
+  Public_Service = 'Public_Service',
+  Organisation = 'Organisation',
+  Legal = 'Legal',
+  Other = 'Other',
+  Sports_Rekreation = 'Sports_Rekreation',
+  Transport_Traffic_Logistik = 'Transport_Traffic_Logistik',
+  Science_Research = 'Science_Research',
+}
+
 type FeedType = 'All' | 'Projects' | 'Jobs';
 type Post = {
   id: number;
   type: 'Project' | 'Job';
   category: string;
-  branch: string;
+  branch: Branches;
   author: string;
   authorInitials: string;
   avatarTone: string;
@@ -33,7 +59,13 @@ export class ProjectsPage {
 
   readonly types: FeedType[] = ['All', 'Projects', 'Jobs'];
   readonly categories = ['All', 'Product design', 'Engineering', 'Marketing', 'Creative'];
-  readonly branches = ['All', 'Remote', 'Belgrade', 'London', 'New York'];
+  readonly branches = Object.values(Branches);
+  readonly featuredBranches = [
+    Branches.IT_Telecommunications,
+    Branches.Education,
+    Branches.Finance_Marketing_Insurance,
+    Branches.Media_Internet,
+  ];
   readonly popularCategories = [
     { name: 'Product design', count: 18 },
     { name: 'Engineering', count: 12 },
@@ -46,7 +78,7 @@ export class ProjectsPage {
       id: 1,
       type: 'Project',
       category: 'Product design',
-      branch: 'Belgrade',
+      branch: Branches.Trade,
       author: 'Mila Petrović',
       authorInitials: 'MP',
       avatarTone: 'bg-[#e8eee1] text-[#536649]',
@@ -66,7 +98,7 @@ export class ProjectsPage {
       id: 2,
       type: 'Job',
       category: 'Engineering',
-      branch: 'Remote',
+      branch: Branches.IT_Telecommunications,
       author: 'Northstar Studio',
       authorInitials: 'NS',
       avatarTone: 'bg-[#e7eef3] text-[#59758b]',
@@ -86,7 +118,7 @@ export class ProjectsPage {
       id: 3,
       type: 'Project',
       category: 'Creative',
-      branch: 'London',
+      branch: Branches.Media_Internet,
       author: 'Jordan Lee',
       authorInitials: 'JL',
       avatarTone: 'bg-[#f0eaf3] text-[#866d8e]',
@@ -106,7 +138,7 @@ export class ProjectsPage {
       id: 4,
       type: 'Job',
       category: 'Marketing',
-      branch: 'New York',
+      branch: Branches.Finance_Marketing_Insurance,
       author: 'Goodwell',
       authorInitials: 'G',
       avatarTone: 'bg-[#f6ece5] text-[#aa7955]',
@@ -141,5 +173,9 @@ export class ProjectsPage {
 
   selectBranch(event: Event): void {
     this.selectedBranch = (event.target as HTMLSelectElement).value;
+  }
+
+  branchLabel(branch: Branches): string {
+    return branch === Branches.All ? 'All branches' : branch.replaceAll('_', ' ');
   }
 }

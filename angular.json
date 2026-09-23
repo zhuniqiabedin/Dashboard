@@ -18,12 +18,22 @@
             "styles": ["src/styles.css"]
           },
           "configurations": {
-            "production": { "budgets": [{ "type": "initial", "maximumWarning": "1mb", "maximumError": "2mb" }], "outputHashing": "all" },
+            "production": {
+              "budgets": [{ "type": "initial", "maximumWarning": "1mb", "maximumError": "2mb" }],
+              "outputHashing": "all"
+            },
             "development": { "optimization": false, "extractLicenses": false, "sourceMap": true }
           },
           "defaultConfiguration": "production"
         },
-        "serve": { "builder": "@angular/build:dev-server", "configurations": { "production": { "buildTarget": "career-space:build:production" }, "development": { "buildTarget": "career-space:build:development" } }, "defaultConfiguration": "development" }
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": { "buildTarget": "career-space:build:production" },
+            "development": { "buildTarget": "career-space:build:development" }
+          },
+          "defaultConfiguration": "development"
+        }
       }
     }
   },
