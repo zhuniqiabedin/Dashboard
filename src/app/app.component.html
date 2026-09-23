@@ -172,7 +172,7 @@
           YOUR CAREER
         </div>
         <a routerLink="/projects" routerLinkActive="nav-active" class="nav-item"
-          ><span>▧</span> Projects
+          ><span>▧</span> My projects
           <b class="ml-auto rounded-full bg-stone-100 px-2 py-0.5 text-[10px] text-stone-500"
             >3</b
           ></a
@@ -224,7 +224,14 @@
             /><kbd class="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[10px]"
               >⌘ K</kbd
             ></label
+          ><a
+            routerLink="/discover"
+            routerLinkActive="bg-[#eef1e9] text-[#536649]"
+            class="hidden shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-50 sm:flex"
+            aria-label="Discover projects and jobs"
           >
+            <span>⌕</span> Discover projects
+          </a>
         </div>
         <div class="relative flex items-center gap-3">
           <span class="hidden text-xs text-stone-400 sm:block">{{ todayLabel }}</span
