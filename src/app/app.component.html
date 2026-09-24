@@ -107,9 +107,10 @@
             <p class="text-sm text-amber-700">{{ notice }}</p>
           }
           <button
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a66c2] px-5 py-3.5 font-medium text-white transition hover:bg-[#004182]"
+            [disabled]="busy"
+            class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0a66c2] px-5 py-3.5 font-medium text-white transition hover:bg-[#004182] disabled:cursor-wait disabled:opacity-60"
           >
-            {{ signup ? 'Create account' : 'Log in' }} <span>↗</span>
+            {{ busy ? 'Please wait…' : signup ? 'Create account' : 'Log in' }} <span>↗</span>
           </button>
         </form>
         <div

@@ -4,6 +4,8 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
+    "backend:start": "npm --prefix backend run start:dev",
+    "backend:build": "npm --prefix backend run build",
     "format": "prettier --write \"src/**/*.{ts,html,css}\" \"*.json\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css}\" \"*.json\""
   },

@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Branches } from '../../branches';
+import { AuthService } from '../../core/auth.service';
 
 type ProjectStatus = 'In progress' | 'Planning';
 type StatusFilter = 'All' | ProjectStatus;
 type Project = {
-  id: number;
+  id: string;
   title: string;
   summary: string;
   details: string;
@@ -33,7 +35,7 @@ export class ProjectsPage {
 
   private readonly starterProjects: Project[] = [
     {
-      id: 1,
+      id: 'starter-1',
       title: 'Portfolio refresh',
       summary: 'A thoughtful home for the work I want to do more of.',
       details:
@@ -44,7 +46,7 @@ export class ProjectsPage {
       progress: 72,
     },
     {
-      id: 2,
+      id: 'starter-2',
       title: 'UX case study',
       summary: 'Making everyday banking feel a little more human.',
       details:
@@ -55,7 +57,7 @@ export class ProjectsPage {
       progress: 46,
     },
     {
-      id: 3,
+      id: 'starter-3',
       title: 'Learn Figma variables',
       summary: 'A small skill investment with a big creative payoff.',
       details:
@@ -66,7 +68,16 @@ export class ProjectsPage {
       progress: 28,
     },
   ];
-  projects: Project[] = this.loadProjects();
+  projects: Project[] = [];
+  loading = true;
+  saving = false;
+
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService,
+  ) {
+    this.loadProjects();
+  }
 
   get filteredProjects(): Project[] {
     return this.projects.filter(
@@ -89,27 +100,34 @@ export class ProjectsPage {
     const summary = this.draft.summary.trim();
     if (!title || !summary) return;
 
-    this.projects.unshift({
-      id: Date.now(),
-      title,
-      summary,
-      details: this.draft.details.trim(),
-      category: this.draft.category,
-      branch: this.draft.branch,
-      status: 'Planning',
-      progress: 0,
-    });
-    let savedLocally = true;
-    try {
-      localStorage.setItem('career-space-projects', JSON.stringify(this.projects));
-    } catch {
-      savedLocally = false;
-    }
-    this.selectedStatus = 'All';
-    this.notice = savedLocally
-      ? 'Your project was added to your list.'
-      : 'Your project was added for this session. Local storage is unavailable.';
-    this.closeNewProjectDialog();
+    this.saving = true;
+    this.http
+      .post<Project>(
+        'http://localhost:3000/projects',
+        {
+          title,
+          summary,
+          details: this.draft.details.trim(),
+          category: this.draft.category,
+          branch: this.draft.branch,
+          status: 'Planning',
+          progress: 0,
+        },
+        { headers: this.headers() },
+      )
+      .subscribe({
+        next: (project) => {
+          this.projects.unshift(project);
+          this.selectedStatus = 'All';
+          this.notice = 'Your project was added to your list.';
+          this.saving = false;
+          this.closeNewProjectDialog();
+        },
+        error: (error) => {
+          this.saving = false;
+          this.notice = error.error?.message || 'Your project could not be saved.';
+        },
+      });
   }
 
   statusCount(status: StatusFilter): number {
@@ -132,13 +150,22 @@ export class ProjectsPage {
     };
   }
 
-  private loadProjects(): Project[] {
-    try {
-      const savedProjects = localStorage.getItem('career-space-projects');
-      if (savedProjects) return JSON.parse(savedProjects) as Project[];
-    } catch {
-      // Use the starter projects if local storage is unavailable or invalid.
-    }
-    return this.starterProjects.map((project) => ({ ...project }));
+  private loadProjects(): void {
+    this.http
+      .get<Project[]>('http://localhost:3000/projects/mine', { headers: this.headers() })
+      .subscribe({
+        next: (projects) => {
+          this.projects = projects;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.notice = 'Could not load your projects. Check that the API is running.';
+        },
+      });
+  }
+
+  private headers(): HttpHeaders {
+    return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }
 }

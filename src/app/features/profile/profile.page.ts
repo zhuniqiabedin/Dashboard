@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
 import { Branches } from '../../branches';
+import { AuthService } from '../../core/auth.service';
 
 type Profile = {
   name: string;
@@ -20,11 +22,29 @@ type Profile = {
   standalone: false,
   templateUrl: './profile.page.html',
 })
-export class ProfilePage {
+export class ProfilePage implements OnInit {
   readonly branches = Object.values(Branches).filter((branch) => branch !== Branches.All);
   notice = '';
   pictureError = '';
   profile = this.loadProfile();
+
+  constructor(
+    private readonly http: HttpClient,
+    private readonly auth: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    this.http
+      .get<Partial<Profile>>('http://localhost:3000/profiles/me', { headers: this.headers() })
+      .subscribe({
+        next: (profile) => {
+          this.profile = { ...this.profile, ...profile };
+        },
+        error: () => {
+          this.notice = 'Could not load your profile. Check that the API is running.';
+        },
+      });
+  }
 
   get initials(): string {
     return this.profile.name
@@ -68,26 +88,25 @@ export class ProfilePage {
   }
 
   saveProfile(): void {
-    try {
-      localStorage.setItem('career-space-profile', JSON.stringify(this.profile));
-      const user = JSON.parse(localStorage.getItem('career-space-user') || '{}') as {
-        name?: string;
-        email?: string;
-      };
-      localStorage.setItem(
-        'career-space-user',
-        JSON.stringify({
-          ...user,
-          name: this.profile.name.trim() || user.name,
-          email: this.profile.email.trim() || user.email,
-          photo: this.profile.photo,
-        }),
-      );
-      window.dispatchEvent(new Event('career-space-profile-updated'));
-      this.notice = 'Your profile has been saved.';
-    } catch {
-      this.notice = 'Your profile could not be saved in this browser.';
-    }
+    const { email: _email, ...editableProfile } = this.profile;
+    this.http
+      .patch<Partial<Profile>>('http://localhost:3000/profiles/me', editableProfile, {
+        headers: this.headers(),
+      })
+      .subscribe({
+        next: (profile) => {
+          this.profile = { ...this.profile, ...profile };
+          const user = this.auth.readUser();
+          if (user) {
+            this.auth.saveUser({ ...user, name: this.profile.name, photo: this.profile.photo });
+            window.dispatchEvent(new Event('career-space-profile-updated'));
+          }
+          this.notice = 'Your profile has been saved.';
+        },
+        error: (error: HttpErrorResponse) => {
+          this.notice = error.error?.message || 'Your profile could not be saved.';
+        },
+      });
   }
 
   branchLabel(branch: Branches): string {
@@ -125,5 +144,9 @@ export class ProfilePage {
     } catch {
       return defaultProfile;
     }
+  }
+
+  private headers(): HttpHeaders {
+    return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }
 }

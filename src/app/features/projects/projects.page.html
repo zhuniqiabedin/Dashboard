@@ -116,9 +116,10 @@
           </button>
           <button
             type="submit"
+            [disabled]="saving"
             class="rounded-xl bg-[#0a66c2] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
           >
-            Save project
+            {{ saving ? 'Saving…' : 'Save project' }}
           </button>
         </div>
       </form>
@@ -162,6 +163,9 @@
     }
   </div>
 
+  @if (loading) {
+  <p class="mt-8 text-sm text-stone-500">Loading your projects…</p>
+  } @else {
   <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
     @for (project of filteredProjects; track project.id) {
     <article
@@ -222,4 +226,5 @@
     </div>
     }
   </div>
+  }
 </section>

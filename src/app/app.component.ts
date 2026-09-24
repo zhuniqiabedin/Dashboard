@@ -1,8 +1,10 @@
 import { Component, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService, AuthUser } from './core/auth.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
-type User = { name: string; email: string; photo?: string };
+type User = AuthUser;
 
 @Component({
   selector: 'app-root',
@@ -11,7 +13,7 @@ type User = { name: string; email: string; photo?: string };
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  user: User | null = this.readUser();
+  user: User | null = null;
   signup = false;
   mobileOpen = false;
   userMenu = false;
@@ -20,13 +22,14 @@ export class AppComponent {
   name = '';
   email = '';
   password = '';
+  busy = false;
+
+  constructor(private readonly auth: AuthService) {
+    this.user = this.readUser();
+  }
+
   private readUser(): User | null {
-    try {
-      const value = localStorage.getItem('career-space-user');
-      return value ? (JSON.parse(value) as User) : null;
-    } catch {
-      return null;
-    }
+    return this.auth.token ? this.auth.readUser() : null;
   }
   @HostListener('window:career-space-profile-updated')
   refreshUser(): void {
@@ -54,16 +57,27 @@ export class AppComponent {
     }).format(new Date());
   }
   authenticate(): void {
-    const fallback = this.email
-      .split('@')[0]
-      .replace(/[._-]/g, ' ')
-      .replace(/\b\w/g, (letter) => letter.toUpperCase());
-    this.user = { name: this.name.trim() || fallback, email: this.email.trim() };
-    localStorage.setItem('career-space-user', JSON.stringify(this.user));
-    this.password = '';
+    this.notice = '';
+    this.busy = true;
+    const request = this.signup
+      ? this.auth.register(this.name.trim(), this.email.trim(), this.password)
+      : this.auth.login(this.email.trim(), this.password);
+    request.subscribe({
+      next: ({ user }) => {
+        this.user = user;
+        this.password = '';
+        this.busy = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.busy = false;
+        this.notice =
+          error.error?.message ||
+          'Could not connect to the server. Make sure the Career Space API is running.';
+      },
+    });
   }
   logout(): void {
-    localStorage.removeItem('career-space-user');
+    this.auth.logout();
     this.user = null;
     this.password = '';
     this.userMenu = false;
