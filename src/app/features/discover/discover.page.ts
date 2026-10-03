@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Branches } from '../../branches';
+import { CvService } from '../../core/cv.service';
 
 type FeedType = 'All' | 'Projects' | 'Jobs';
 type Post = {
@@ -31,6 +32,9 @@ export class DiscoverPage {
   selectedType: FeedType = 'All';
   selectedCategory = 'All';
   selectedBranch = 'All';
+  matchMySkills = false;
+
+  constructor(private readonly cvService: CvService) {}
 
   readonly types: FeedType[] = ['All', 'Projects', 'Jobs'];
   readonly categories = ['All', 'Product design', 'Engineering', 'Marketing', 'Creative'];
@@ -138,7 +142,10 @@ export class DiscoverPage {
       const categoryMatches =
         this.selectedCategory === 'All' || post.category === this.selectedCategory;
       const branchMatches = this.selectedBranch === 'All' || post.branch === this.selectedBranch;
-      return typeMatches && categoryMatches && branchMatches;
+      const mySkills = this.cvService.cv().skills.map((skill) => skill.toLowerCase());
+      const skillMatches =
+        !this.matchMySkills || post.tags.some((tag) => mySkills.includes(tag.toLowerCase()));
+      return typeMatches && categoryMatches && branchMatches && skillMatches;
     });
   }
 

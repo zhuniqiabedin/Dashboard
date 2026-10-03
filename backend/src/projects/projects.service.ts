@@ -9,8 +9,14 @@ import { Project, ProjectDocument } from './project.schema';
 export class ProjectsService {
   constructor(@InjectModel(Project.name) private readonly projects: Model<ProjectDocument>) {}
 
-  listMine(userId: string) {
-    return this.projects.find({ userId }).sort({ createdAt: -1 }).lean();
+  listMine(userId: string): Promise<Record<string, unknown>[]> {
+    return this.projects
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .lean()
+      .then((projects) =>
+        projects.map(({ _id, ...project }) => ({ ...project, id: _id.toString() })),
+      );
   }
 
   async create(userId: string, input: CreateProjectDto) {
@@ -62,6 +68,20 @@ export class ProjectsService {
     ) {
       throw new BadRequestException('Invalid project status or progress.');
     }
+    const startDate = new Date(input.startDate);
+    const endDate = input.endDate ? new Date(input.endDate) : undefined;
+    if (!input.startDate || Number.isNaN(startDate.getTime()))
+      throw new BadRequestException('A valid project start date is required.');
+    if (input.endDate && (Number.isNaN(endDate?.getTime()) || endDate! < startDate))
+      throw new BadRequestException('The project end date must be after its start date.');
+    const skills = Array.isArray(input.skills) ? input.skills : [];
+    if (skills.some((skill) => typeof skill !== 'string'))
+      throw new BadRequestException('Project skills must be text values.');
+    const uniqueSkills = [
+      ...new Map(skills.map((skill) => [skill.trim().toLowerCase(), skill.trim()])).values(),
+    ]
+      .filter((skill) => skill.length > 0 && skill.length <= 50)
+      .slice(0, 30);
     return {
       title: input.title.trim(),
       summary: input.summary.trim(),
@@ -70,6 +90,9 @@ export class ProjectsService {
       branch: input.branch,
       status,
       progress,
+      startDate,
+      ...(endDate ? { endDate } : {}),
+      skills: uniqueSkills,
     };
   }
 }

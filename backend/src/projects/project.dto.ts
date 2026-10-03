@@ -8,6 +8,9 @@ export class CreateProjectDto {
   branch!: Branches;
   status?: 'In progress' | 'Planning';
   progress?: number;
+  startDate!: string;
+  endDate?: string;
+  skills?: string[];
 }
 
 export class UpdateProjectDto extends CreateProjectDto {}

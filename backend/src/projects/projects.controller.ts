@@ -8,7 +8,7 @@ import { ProjectsService } from './projects.service';
 export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
 
-  @Get('mine') list(@Req() request: AuthenticatedRequest) {
+  @Get('mine') list(@Req() request: AuthenticatedRequest): Promise<Record<string, unknown>[]> {
     return this.projects.listMine(request.user.sub);
   }
   @Post() create(@Req() request: AuthenticatedRequest, @Body() input: CreateProjectDto) {

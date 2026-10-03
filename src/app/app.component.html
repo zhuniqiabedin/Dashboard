@@ -153,6 +153,7 @@
     <aside
       class="fixed inset-y-0 left-0 z-40 flex w-[248px] -translate-x-full flex-col border-r border-stone-200/70 bg-white px-4 py-5 transition-transform md:translate-x-0"
       [class.translate-x-0]="mobileOpen"
+      [class.hidden]="companyMode"
     >
       <a
         routerLink="/overview"
@@ -185,6 +186,9 @@
         ><a routerLink="/calendar" routerLinkActive="nav-active" class="nav-item"
           ><span>▦</span> Calendar</a
         ><a routerLink="/cv" routerLinkActive="nav-active" class="nav-item"><span>▤</span> My CV</a>
+        <a routerLink="/companies" routerLinkActive="nav-active" class="nav-item"
+          ><span>▥</span> Companies</a
+        >
       </nav>
       <div class="mt-auto rounded-2xl bg-[#f3f8fc] p-4">
         <div class="text-sm font-semibold">A little progress adds up.</div>
@@ -196,7 +200,7 @@
         </div>
       </div>
     </aside>
-    <main class="min-h-screen md:pl-[248px]">
+    <main class="min-h-screen md:pl-[248px]" [class.md:pl-0]="companyMode">
       <header
         class="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-stone-200/70 bg-white/90 px-5 backdrop-blur sm:px-8 lg:px-10"
       >
@@ -207,13 +211,6 @@
             aria-label="Open navigation"
           >
             ☰</button
-          ><a
-            routerLink="/overview"
-            class="flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight"
-            ><span class="text-[#0a66c2]">✳</span> career<span
-              class="-ml-2 font-normal text-stone-400"
-              >space</span
-            ></a
           ><label
             class="hidden h-10 w-[min(38vw,390px)] items-center gap-2.5 rounded-xl border border-stone-200 bg-[#ffffff] px-3 text-stone-400 sm:flex"
             ><span class="text-base">⌕</span

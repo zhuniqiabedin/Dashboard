@@ -17,6 +17,9 @@ export class Project {
   @Prop({ type: String, enum: ['In progress', 'Planning'], default: 'Planning' })
   status!: 'In progress' | 'Planning';
   @Prop({ min: 0, max: 100, default: 0 }) progress!: number;
+  @Prop({ required: true, type: Date }) startDate!: Date;
+  @Prop({ type: Date }) endDate?: Date;
+  @Prop({ type: [String], default: [] }) skills!: string[];
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);

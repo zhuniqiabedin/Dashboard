@@ -77,6 +77,38 @@
             </select>
           </div>
         </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="project-start" class="mb-1.5 block text-sm font-medium text-stone-700"
+              >Start date</label
+            >
+            <input
+              id="project-start"
+              name="projectStart"
+              [(ngModel)]="draft.startDate"
+              type="date"
+              required
+              class="w-full rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2]"
+            />
+          </div>
+          <div>
+            <label for="project-end" class="mb-1.5 block text-sm font-medium text-stone-700"
+              >End date <span class="font-normal text-stone-400">(optional)</span></label
+            >
+            <input
+              id="project-end"
+              name="projectEnd"
+              [(ngModel)]="draft.endDate"
+              type="date"
+              [min]="draft.startDate"
+              class="w-full rounded-xl border border-stone-200 px-3.5 py-3 text-sm outline-none focus:border-[#0a66c2]"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-stone-700">Skills</label>
+          <app-skills-chips [(skills)]="draft.skills"></app-skills-chips>
+        </div>
         <div>
           <label for="project-summary" class="mb-1.5 block text-sm font-medium text-stone-700"
             >Short description</label
@@ -116,10 +148,10 @@
           </button>
           <button
             type="submit"
-            [disabled]="saving"
+            [disabled]="saving()"
             class="rounded-xl bg-[#0a66c2] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
           >
-            {{ saving ? 'Saving…' : 'Save project' }}
+            {{ saving() ? 'Saving…' : 'Save project' }}
           </button>
         </div>
       </form>
@@ -163,7 +195,7 @@
     }
   </div>
 
-  @if (loading) {
+  @if (loading()) {
   <p class="mt-8 text-sm text-stone-500">Loading your projects…</p>
   } @else {
   <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

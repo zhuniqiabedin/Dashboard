@@ -1,0 +1,245 @@
+<section>
+  <div class="mb-7">
+    <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">YOUR ORGANISATION</div>
+    <h1 class="mt-2 text-3xl font-semibold">Companies</h1>
+    <p class="mt-2 text-sm text-stone-500">
+      Create a company workspace and manage the people, roles, jobs, and projects behind it.
+    </p>
+  </div>
+  @if (notice) {
+  <p class="mb-4 rounded-xl bg-[#e8f3ff] px-4 py-3 text-sm text-[#0a66c2]">{{ notice }}</p>
+  } @if (error()) {
+  <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</p>
+  }
+  <div
+    class="grid min-h-[560px] overflow-hidden rounded-2xl border border-stone-200 bg-white md:grid-cols-[245px_1fr]"
+    [class.md:grid-cols-1]="!selectedCompanyId"
+  >
+    <aside
+      class="border-b border-stone-200 bg-stone-50 p-4 md:border-r md:border-b-0"
+      [class.hidden]="!selectedCompanyId"
+    >
+      <div class="mb-3 flex items-center justify-between">
+        <span class="text-[10px] font-semibold tracking-[.16em] text-stone-400">MY COMPANIES</span
+        ><button
+          class="rounded-lg bg-[#0a66c2] px-2 py-1 text-xs text-white"
+          (click)="selectedCompanyId = ''"
+        >
+          ＋
+        </button>
+      </div>
+      @if (selectedCompanyId) {
+      <button
+        class="mb-4 text-xs font-medium text-[#0a66c2] hover:underline"
+        (click)="leaveCompany()"
+      >
+        ← Personal workspace
+      </button>
+      } @for (company of companies(); track company._id) {<button
+        class="mb-1 flex w-full items-center gap-2 rounded-xl p-3 text-left text-sm"
+        [class.bg-[#e8f3ff]]="selectedCompanyId === company._id"
+        [class.text-[#0a66c2]]="selectedCompanyId === company._id"
+        (click)="selectCompany(company._id)"
+      >
+        <span class="grid size-8 place-items-center rounded-lg bg-white font-semibold"
+          >{{ company.name.slice(0, 1).toUpperCase() }}</span
+        ><span class="truncate">{{ company.name }}</span></button
+      >} @empty {
+      <p class="text-xs leading-5 text-stone-400">No company yet. Use the form to create one.</p>
+      }
+    </aside>
+    @if (!selectedCompanyId) {
+    <div class="p-6 sm:p-10">
+      <div
+        class="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#e8f3ff] p-6 sm:p-8"
+      >
+        <div class="flex items-center gap-4">
+          <span class="grid size-14 place-items-center rounded-2xl bg-white text-2xl text-[#0a66c2]"
+            >⚑</span
+          >
+          <div>
+            <h2 class="text-2xl font-semibold text-stone-800">Give your company a home.</h2>
+            <p class="mt-1 max-w-xl text-sm leading-6 text-stone-500">
+              Manage your community, share updates, publish jobs, and build something of your own.
+            </p>
+          </div>
+        </div>
+        @if (canCreateCompany) {<button
+          class="rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-medium text-white"
+          (click)="name = ''; description = ''"
+        >
+          ＋ Create new company</button
+        >}
+      </div>
+      <div class="mb-5 flex items-center gap-2 border-b border-stone-200 pb-3">
+        <button class="rounded-lg bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0a66c2]">
+          Companies you manage · {{ companies().length }}</button
+        ><span class="px-3 text-sm text-stone-400">Discover</span>
+      </div>
+      @if (companies().length) {
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold">Your companies</h2>
+        <p class="mt-1 text-sm text-stone-500">
+          Choose a company to open its full management workspace.
+        </p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          @for (company of companies(); track company._id) {<button
+            class="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[#b8d8f5] hover:shadow-lg"
+            (click)="selectCompany(company._id)"
+          >
+            <div class="h-28 bg-gradient-to-br from-[#dcecff] via-[#70b5f9] to-[#004182]"></div>
+            <div class="p-5">
+              <div class="flex items-center gap-3">
+                <span
+                  class="grid size-12 place-items-center rounded-xl bg-[#e8f3ff] text-lg font-semibold text-[#0a66c2]"
+                  >{{ company.name.slice(0, 1).toUpperCase() }}</span
+                >
+                <div>
+                  <h3 class="font-semibold group-hover:text-[#0a66c2]">{{ company.name }}</h3>
+                  <p class="mt-1 text-xs text-stone-500">
+                    {{ company.location || 'Company workspace' }}
+                  </p>
+                </div>
+              </div>
+              <p class="mt-4 line-clamp-2 text-sm leading-5 text-stone-500">
+                {{ company.description }}
+              </p>
+              <div class="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
+                {{ company.employeeIds.length }} employees · {{ company.projectIds.length }}
+                projects
+                <span class="float-right font-semibold text-[#0a66c2]">Manage page →</span>
+              </div>
+            </div></button
+          >}
+        </div>
+      </div>
+      } @if (canCreateCompany) {
+      <form class="mx-auto w-full max-w-lg" (ngSubmit)="create()">
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold">Create a company</h2>
+          <p class="mt-1 text-sm text-stone-500">
+            This creates a workspace where you can later publish jobs and projects.
+          </p>
+        </div>
+        <input
+          class="profile-input mb-3"
+          [(ngModel)]="name"
+          name="name"
+          placeholder="Company name"
+          required
+        /><textarea
+          class="profile-input mb-3 resize-y"
+          [(ngModel)]="description"
+          name="description"
+          placeholder="What does the company do?"
+          rows="3"
+          required
+        ></textarea>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <input
+            class="profile-input"
+            [(ngModel)]="website"
+            name="website"
+            placeholder="Website"
+          /><input
+            class="profile-input"
+            [(ngModel)]="location"
+            name="location"
+            placeholder="Location"
+          />
+        </div>
+        <button class="mt-5 rounded-xl bg-[#0a66c2] px-5 py-3 text-sm font-medium text-white">
+          Create company
+        </button>
+      </form>
+      } @else {
+      <div class="rounded-xl bg-[#e8f3ff] p-4 text-sm text-[#0a66c2]">
+        You have reached the maximum of 2 companies.
+      </div>
+      }
+    </div>
+    } @if (selectedCompany; as company) {
+    <main class="bg-stone-50/60">
+      <div class="h-32 bg-gradient-to-r from-[#004182] via-[#0a66c2] to-[#70b5f9]"></div>
+      <div class="p-6 sm:p-8">
+        <div
+          class="flex flex-wrap items-start justify-between gap-4 border-b border-stone-100 pb-6"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="grid size-12 place-items-center rounded-2xl bg-[#e8f3ff] text-lg font-semibold text-[#0a66c2]"
+              >{{ company.name.slice(0, 1).toUpperCase() }}</span
+            >
+            <div>
+              <h2 class="text-2xl font-semibold">{{ company.name }}</h2>
+              <p class="mt-1 text-sm text-stone-500">
+                {{ company.location || 'Company workspace' }}
+              </p>
+            </div>
+          </div>
+          <button
+            class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm text-white"
+            (click)="selectedSection = 'employees'"
+          >
+            Manage team
+          </button>
+        </div>
+        <nav class="my-5 flex flex-wrap gap-2 border-b border-stone-200 pb-3">
+          @for (item of
+          [{key:'overview',label:'Overview'},{key:'jobs',label:'Jobs'},{key:'projects',label:'Projects'},{key:'roles',label:'Roles'},{key:'employees',label:'Employees'},{key:'settings',label:'Settings'}];
+          track item.key) {<button
+            class="rounded-full px-3 py-2 text-xs font-medium"
+            [class.bg-[#e8f3ff]]="selectedSection === item.key"
+            [class.text-[#0a66c2]]="selectedSection === item.key"
+            [class.bg-stone-100]="selectedSection !== item.key"
+            (click)="selectedSection = $any(item.key)"
+          >
+            {{ item.label }}</button
+          >}
+        </nav>
+        @if (selectedSection === 'overview') {
+        <h3 class="text-lg font-semibold">{{ company.name }} workspace</h3>
+        <p class="mt-2 max-w-xl text-sm leading-6 text-stone-500">{{ company.description }}</p>
+        <div class="mt-6 grid gap-3 sm:grid-cols-3">
+          <div class="rounded-xl bg-stone-50 p-4">
+            <b>{{ company.employeeIds.length }}</b>
+            <p class="mt-1 text-xs text-stone-500">Employees</p>
+          </div>
+          <div class="rounded-xl bg-stone-50 p-4">
+            <b>{{ company.projectIds.length }}</b>
+            <p class="mt-1 text-xs text-stone-500">Projects</p>
+          </div>
+          <div class="rounded-xl bg-stone-50 p-4">
+            <b>{{ company.jobIds.length }}</b>
+            <p class="mt-1 text-xs text-stone-500">Jobs</p>
+          </div>
+        </div>
+        } @else if (selectedSection === 'employees') {
+        <h3 class="text-lg font-semibold">Employees</h3>
+        <p class="mt-1 text-sm text-stone-500">Invite an existing Career Space user by email.</p>
+        <div class="mt-4 flex max-w-lg gap-2">
+          <input
+            class="profile-input"
+            [(ngModel)]="employeeEmail"
+            name="employeeEmail"
+            placeholder="Employee email"
+          /><button
+            class="rounded-xl bg-[#0a66c2] px-4 text-sm text-white"
+            (click)="selected = company._id; addEmployee()"
+          >
+            Add
+          </button>
+        </div>
+        } @else {
+        <div class="rounded-xl border border-dashed border-stone-200 p-8">
+          <h3 class="font-semibold">{{ selectedSection | titlecase }}</h3>
+          <p class="mt-2 text-sm text-stone-500">
+            This company area is ready for publishing and managing company {{ selectedSection }}.
+          </p>
+        </div>
+        }
+      </div>
+    </main>
+    }
+  </div>
+</section>

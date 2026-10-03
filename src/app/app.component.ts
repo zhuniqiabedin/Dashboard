@@ -23,6 +23,7 @@ export class AppComponent {
   email = '';
   password = '';
   busy = false;
+  companyMode = false;
 
   constructor(private readonly auth: AuthService) {
     this.user = this.readUser();
@@ -34,6 +35,10 @@ export class AppComponent {
   @HostListener('window:career-space-profile-updated')
   refreshUser(): void {
     this.user = this.readUser();
+  }
+  @HostListener('window:career-space-company-mode', ['$event'])
+  setCompanyMode(event: Event): void {
+    this.companyMode = (event as CustomEvent<boolean>).detail;
   }
   get firstName(): string {
     return this.user?.name.trim().split(/\s+/)[0] || 'friend';
