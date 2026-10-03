@@ -1,6 +1,7 @@
 import { Branches } from '../branches.enum';
 
 export class CreateProjectDto {
+  pageId?: string;
   title!: string;
   summary!: string;
   details?: string;
@@ -11,6 +12,9 @@ export class CreateProjectDto {
   startDate!: string;
   endDate?: string;
   skills?: string[];
+  isPublished?: boolean;
+  publishAt?: string;
+  unpublishAt?: string;
 }
 
 export class UpdateProjectDto extends CreateProjectDto {}

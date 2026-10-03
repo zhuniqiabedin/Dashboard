@@ -1,6 +1,9 @@
 import { Component, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faBell, faCompass, faComments, faHouse, faMagnifyingGlass, faPeopleGroup, faPlay, faChevronDown, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { AuthService, AuthUser } from './core/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -9,10 +12,11 @@ type User = AuthUser;
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, FontAwesomeModule],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  readonly faBell = faBell; readonly faCompass = faCompass; readonly faComments = faComments; readonly faHouse = faHouse; readonly faMagnifyingGlass = faMagnifyingGlass; readonly faPeopleGroup = faPeopleGroup; readonly faPlay = faPlay; readonly faChevronDown = faChevronDown; readonly faLayers = faLayerGroup;
   user: User | null = null;
   signup = false;
   mobileOpen = false;
@@ -25,8 +29,12 @@ export class AppComponent {
   busy = false;
   companyMode = false;
 
-  constructor(private readonly auth: AuthService) {
+  constructor(private readonly auth: AuthService, private readonly router: Router) {
     this.user = this.readUser();
+    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
+      const parts = event.urlAfterRedirects.split('/').filter(Boolean);
+      this.companyMode = parts[0] === 'companies' && parts.length >= 2;
+    });
   }
 
   private readUser(): User | null {

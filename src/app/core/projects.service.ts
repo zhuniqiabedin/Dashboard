@@ -18,6 +18,9 @@ export type Project = {
   startDate: string;
   endDate?: string;
   skills: string[];
+  isPublished?: boolean;
+  publishAt?: string;
+  unpublishAt?: string;
 };
 type ApiProject = Omit<Project, 'id'> & { id?: string; _id?: string };
 type ProjectsResponse = ApiProject[] | { projects?: ApiProject[]; data?: ApiProject[] };
@@ -55,6 +58,7 @@ export class ProjectsService {
                   ...project,
                   id: project.id ?? project._id ?? crypto.randomUUID(),
                   skills: project.skills ?? [],
+                  isPublished: project.isPublished ?? false,
                 }) as Project,
             ),
           );
@@ -79,6 +83,17 @@ export class ProjectsService {
         error: (requestError) =>
           this.error.set(requestError.error?.message || 'Your project could not be saved.'),
       });
+  }
+  update(id: string, project: Omit<Project, 'id'>): void {
+    this.saving.set(true);
+    this.http.patch(`${environment.apiUrl}/projects/${id}`, project, { headers: this.headers() }).pipe(finalize(() => this.saving.set(false))).subscribe({ next: () => this.load(), error: (error) => this.error.set(error.error?.message || 'Your project could not be updated.') });
+  }
+  remove(id: string): void {
+    this.saving.set(true);
+    this.http.delete(`${environment.apiUrl}/projects/${id}`, { headers: this.headers() }).pipe(finalize(() => this.saving.set(false))).subscribe({
+      next: () => this.load(),
+      error: (error) => this.error.set(error.error?.message || 'Your project could not be deleted.'),
+    });
   }
 
   private headers(): HttpHeaders {

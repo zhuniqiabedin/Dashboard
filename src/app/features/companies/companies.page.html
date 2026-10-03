@@ -1,245 +1,566 @@
-<section>
-  <div class="mb-7">
-    <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">YOUR ORGANISATION</div>
-    <h1 class="mt-2 text-3xl font-semibold">Companies</h1>
-    <p class="mt-2 text-sm text-stone-500">
-      Create a company workspace and manage the people, roles, jobs, and projects behind it.
-    </p>
-  </div>
-  @if (notice) {
-  <p class="mb-4 rounded-xl bg-[#e8f3ff] px-4 py-3 text-sm text-[#0a66c2]">{{ notice }}</p>
-  } @if (error()) {
-  <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</p>
-  }
-  <div
-    class="grid min-h-[560px] overflow-hidden rounded-2xl border border-stone-200 bg-white md:grid-cols-[245px_1fr]"
-    [class.md:grid-cols-1]="!selectedCompanyId"
-  >
-    <aside
-      class="border-b border-stone-200 bg-stone-50 p-4 md:border-r md:border-b-0"
-      [class.hidden]="!selectedCompanyId"
-    >
-      <div class="mb-3 flex items-center justify-between">
-        <span class="text-[10px] font-semibold tracking-[.16em] text-stone-400">MY COMPANIES</span
-        ><button
-          class="rounded-lg bg-[#0a66c2] px-2 py-1 text-xs text-white"
-          (click)="selectedCompanyId = ''"
-        >
-          ＋
-        </button>
-      </div>
-      @if (selectedCompanyId) {
-      <button
-        class="mb-4 text-xs font-medium text-[#0a66c2] hover:underline"
-        (click)="leaveCompany()"
-      >
-        ← Personal workspace
-      </button>
-      } @for (company of companies(); track company._id) {<button
-        class="mb-1 flex w-full items-center gap-2 rounded-xl p-3 text-left text-sm"
-        [class.bg-[#e8f3ff]]="selectedCompanyId === company._id"
-        [class.text-[#0a66c2]]="selectedCompanyId === company._id"
-        (click)="selectCompany(company._id)"
-      >
-        <span class="grid size-8 place-items-center rounded-lg bg-white font-semibold"
-          >{{ company.name.slice(0, 1).toUpperCase() }}</span
-        ><span class="truncate">{{ company.name }}</span></button
-      >} @empty {
-      <p class="text-xs leading-5 text-stone-400">No company yet. Use the form to create one.</p>
-      }
-    </aside>
-    @if (!selectedCompanyId) {
-    <div class="p-6 sm:p-10">
-      <div
-        class="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#e8f3ff] p-6 sm:p-8"
-      >
-        <div class="flex items-center gap-4">
-          <span class="grid size-14 place-items-center rounded-2xl bg-white text-2xl text-[#0a66c2]"
-            >⚑</span
-          >
-          <div>
-            <h2 class="text-2xl font-semibold text-stone-800">Give your company a home.</h2>
-            <p class="mt-1 max-w-xl text-sm leading-6 text-stone-500">
-              Manage your community, share updates, publish jobs, and build something of your own.
-            </p>
-          </div>
+@if (!selectedCompanyId) {
+<section class="min-h-[calc(100vh-72px)]">
+  <div class="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 lg:px-10">
+    <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">
+          YOUR ORGANISATION
         </div>
-        @if (canCreateCompany) {<button
-          class="rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-medium text-white"
-          (click)="name = ''; description = ''"
-        >
-          ＋ Create new company</button
-        >}
-      </div>
-      <div class="mb-5 flex items-center gap-2 border-b border-stone-200 pb-3">
-        <button class="rounded-lg bg-[#e8f3ff] px-4 py-2 text-sm font-medium text-[#0a66c2]">
-          Companies you manage · {{ companies().length }}</button
-        ><span class="px-3 text-sm text-stone-400">Discover</span>
-      </div>
-      @if (companies().length) {
-      <div class="mb-8">
-        <h2 class="text-xl font-semibold">Your companies</h2>
-        <p class="mt-1 text-sm text-stone-500">
-          Choose a company to open its full management workspace.
+        <h1 class="mt-2 text-3xl font-semibold">Your pages</h1>
+        <p class="mt-2 max-w-2xl text-sm text-stone-500">
+          Manage your companies, share updates, and build something of your own.
         </p>
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-          @for (company of companies(); track company._id) {<button
-            class="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[#b8d8f5] hover:shadow-lg"
-            (click)="selectCompany(company._id)"
-          >
-            <div class="h-28 bg-gradient-to-br from-[#dcecff] via-[#70b5f9] to-[#004182]"></div>
-            <div class="p-5">
-              <div class="flex items-center gap-3">
-                <span
-                  class="grid size-12 place-items-center rounded-xl bg-[#e8f3ff] text-lg font-semibold text-[#0a66c2]"
-                  >{{ company.name.slice(0, 1).toUpperCase() }}</span
-                >
-                <div>
-                  <h3 class="font-semibold group-hover:text-[#0a66c2]">{{ company.name }}</h3>
-                  <p class="mt-1 text-xs text-stone-500">
-                    {{ company.location || 'Company workspace' }}
-                  </p>
-                </div>
-              </div>
-              <p class="mt-4 line-clamp-2 text-sm leading-5 text-stone-500">
-                {{ company.description }}
-              </p>
-              <div class="mt-4 border-t border-stone-100 pt-4 text-xs text-stone-400">
-                {{ company.employeeIds.length }} employees · {{ company.projectIds.length }}
-                projects
-                <span class="float-right font-semibold text-[#0a66c2]">Manage page →</span>
-              </div>
-            </div></button
-          >}
-        </div>
       </div>
-      } @if (canCreateCompany) {
-      <form class="mx-auto w-full max-w-lg" (ngSubmit)="create()">
-        <div class="mb-6">
-          <h2 class="text-xl font-semibold">Create a company</h2>
-          <p class="mt-1 text-sm text-stone-500">
-            This creates a workspace where you can later publish jobs and projects.
+      @if (canCreateCompany) {
+      <a
+        href="#create-company"
+        class="rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-medium text-white hover:bg-[#004182]"
+        >＋ Create company</a
+      >
+      }
+    </div>
+    @if (notice) {
+    <p class="mb-4 rounded-xl bg-[#e8f3ff] px-4 py-3 text-sm text-[#0a66c2]">{{ notice }}</p>
+    } @if (error()) {
+    <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</p>
+    }
+    <div
+      class="mb-7 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#e8f0ff] p-6 sm:p-8"
+    >
+      <div class="flex items-center gap-4">
+        <span
+          class="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-2xl text-[#2864dc]"
+          >⚑</span
+        >
+        <div>
+          <h2 class="text-xl font-semibold">Give your company a home.</h2>
+          <p class="mt-1 max-w-xl text-sm leading-6 text-stone-500">
+            Manage your community, share updates, publish jobs, and build something of your own.
           </p>
         </div>
+      </div>
+      @if (canCreateCompany) {
+      <a
+        href="#create-company"
+        class="rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1f53bb]"
+        >＋ Create new company</a
+      >
+      }
+    </div>
+    <div class="mb-5 flex items-center justify-between border-b border-stone-200 pb-3">
+      <div class="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#2864dc]">
+        Pages you manage · {{ companies().length }}
+      </div>
+      <span class="text-xs text-stone-400">Recently active</span>
+    </div>
+    @if (loading()) {
+    <p class="py-10 text-sm text-stone-500">Loading your companies…</p>
+    } @else if (companies().length) {
+    <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      @for (company of companies(); track company._id) {
+      <article
+        class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div
+          class="relative h-32 overflow-hidden bg-gradient-to-br from-[#dcecff] via-[#70b5f9] to-[#004182]"
+        >
+          <div class="absolute -top-12 -right-6 size-40 rounded-full border border-white/25"></div>
+          <div
+            class="absolute right-8 -bottom-20 size-44 rounded-full border border-white/20"
+          ></div>
+          <span
+            class="absolute bottom-0 left-5 grid size-14 translate-y-1/2 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-[#e8f3ff] text-xl font-semibold text-[#0a66c2]"
+            >@if (company.logo) {
+            <img
+              [src]="company.logo"
+              [alt]="company.name + ' logo'"
+              class="size-full object-cover"
+            />
+            } @else { {{ company.name.slice(0, 1).toUpperCase() }} }</span
+          >
+        </div>
+        <div class="p-5 pt-9">
+          <h3 class="text-lg font-semibold text-stone-800">{{ company.name }}</h3>
+          <p class="mt-1 text-xs text-stone-500">
+            ⌖ &nbsp;{{ company.location || 'Location not set' }}
+          </p>
+          <p class="mt-4 line-clamp-2 min-h-10 text-sm leading-5 text-stone-500">
+            {{ company.description }}
+          </p>
+          <div class="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
+            <div class="flex gap-4 text-xs text-stone-500">
+              <span><b class="text-stone-700">{{ company.employeeIds.length }}</b> employees</span
+              ><span><b class="text-stone-700">{{ company.projectIds.length }}</b> projects</span>
+            </div>
+            <button
+              class="text-xs font-semibold text-[#0a66c2] hover:underline"
+              (click)="selectCompany(company._id)"
+            >
+              Manage page →
+            </button>
+          </div>
+        </div>
+      </article>
+      }
+    </div>
+    } @else {
+    <div class="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-10 text-center">
+      <span
+        class="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e8f3ff] text-xl text-[#0a66c2]"
+        >♧</span
+      >
+      <h2 class="mt-4 font-semibold">Your company workspace starts here</h2>
+      <p class="mt-1 text-sm text-stone-500">
+        Create a company to manage your team, jobs, and projects.
+      </p>
+    </div>
+    } @if (canCreateCompany) {
+    <form
+      id="create-company"
+      class="mt-10 rounded-2xl border border-stone-200 bg-white p-6 sm:p-8"
+      (ngSubmit)="create()"
+    >
+      <div class="mb-5">
+        <h2 class="text-xl font-semibold">Create a company</h2>
+        <p class="mt-1 text-sm text-stone-500">You can create up to two companies.</p>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
         <input
-          class="profile-input mb-3"
+          class="profile-input"
           [(ngModel)]="name"
           name="name"
           placeholder="Company name"
           required
-        /><textarea
-          class="profile-input mb-3 resize-y"
+        />
+        <input
+          class="profile-input"
+          [(ngModel)]="location"
+          name="location"
+          placeholder="Location"
+        />
+        <input class="profile-input" [(ngModel)]="website" name="website" placeholder="Website" />
+        <textarea
+          class="profile-input resize-y md:row-span-2"
           [(ngModel)]="description"
           name="description"
           placeholder="What does the company do?"
           rows="3"
           required
         ></textarea>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <input
-            class="profile-input"
-            [(ngModel)]="website"
-            name="website"
-            placeholder="Website"
-          /><input
-            class="profile-input"
-            [(ngModel)]="location"
-            name="location"
-            placeholder="Location"
-          />
-        </div>
-        <button class="mt-5 rounded-xl bg-[#0a66c2] px-5 py-3 text-sm font-medium text-white">
-          Create company
-        </button>
-      </form>
-      } @else {
-      <div class="rounded-xl bg-[#e8f3ff] p-4 text-sm text-[#0a66c2]">
-        You have reached the maximum of 2 companies.
       </div>
-      }
+      <button
+        [disabled]="saving()"
+        class="mt-5 rounded-xl bg-[#0a66c2] px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
+      >
+        {{ saving() ? 'Creating…' : 'Create company' }}
+      </button>
+    </form>
+    } @else {
+    <p class="mt-8 rounded-xl bg-[#e8f3ff] p-4 text-sm text-[#0a66c2]">
+      You have reached the maximum of 2 companies.
+    </p>
+    }
+  </div>
+</section>
+} @else if (selectedCompany; as company) {
+<div class="flex min-h-[calc(100vh-72px)] bg-[#f1f4f8]">
+  <aside
+    class="sticky top-[72px] z-10 flex h-[calc(100vh-72px)] w-[248px] shrink-0 flex-col self-start overflow-hidden border-r border-stone-200 bg-white px-4 py-5"
+  >
+    <button
+      class="mb-7 flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-stone-500 hover:bg-stone-50"
+      (click)="leaveCompany()"
+    >
+      <span>←</span> Personal workspace
+    </button>
+    <div class="mb-7 flex items-center gap-3 border-b border-stone-100 px-2 pb-5">
+      <span
+        class="grid size-10 shrink-0 place-items-center rounded-xl bg-[#294b39] font-semibold text-white"
+        >{{ company.name.slice(0, 1).toUpperCase() }}</span
+      >
+      <span class="min-w-0"
+        ><b class="block truncate text-sm">{{ company.name }}</b
+        ><small class="mt-1 block text-xs text-stone-400">Company workspace</small></span
+      >
     </div>
-    } @if (selectedCompany; as company) {
-    <main class="bg-stone-50/60">
-      <div class="h-32 bg-gradient-to-r from-[#004182] via-[#0a66c2] to-[#70b5f9]"></div>
-      <div class="p-6 sm:p-8">
-        <div
-          class="flex flex-wrap items-start justify-between gap-4 border-b border-stone-100 pb-6"
-        >
-          <div class="flex items-center gap-3">
-            <span
-              class="grid size-12 place-items-center rounded-2xl bg-[#e8f3ff] text-lg font-semibold text-[#0a66c2]"
-              >{{ company.name.slice(0, 1).toUpperCase() }}</span
+    <div class="mb-2 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">
+      PAGE WORKSPACE
+    </div>
+    <nav class="space-y-1" aria-label="Company navigation">
+      @for (item of [{key:'overview',label:'Page
+      home',icon:'⌂'},{key:'jobs',label:'Jobs',icon:'◫'},{key:'projects',label:'Projects',icon:'▤'},{key:'employees',label:'Inbox',icon:'◯'},{key:'roles',label:'Insights',icon:'⌁'},{key:'settings',label:'Page
+      settings',icon:'⚙'}]; track item.key) {
+      <button
+        class="nav-item w-full"
+        [class.nav-active]="selectedSection === item.key"
+        (click)="item.key === 'projects' ? openPageProjects() : selectedSection = $any(item.key)"
+      >
+        <span>{{ item.icon }}</span>{{ item.label }}
+      </button>
+      }
+    </nav>
+    <button
+      class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2864dc] px-3 py-3 text-sm font-semibold text-white"
+      (click)="openProjectDialog()"
+    >
+      ＋ Create project
+    </button>
+    <div class="mt-7 border-t border-stone-200 pt-5">
+      <div class="mb-2 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">MANAGE</div>
+      <button class="nav-item w-full" (click)="selectedSection = 'settings'">
+        <span>♢</span> Page access
+      </button>
+      <button class="nav-item w-full"><span>?</span> Help &amp; support</button>
+    </div>
+    <div class="mt-auto rounded-xl bg-[#f3f8fc] p-3 text-xs leading-5 text-stone-500">
+      <b class="text-stone-700">{{ company.employeeIds.length }}</b> team members<br /><b
+        class="text-stone-700"
+        >{{ company.projectIds.length }}</b
+      >
+      projects
+    </div>
+  </aside>
+  <div class="min-w-0 flex-1">
+    <div class="mx-auto max-w-[1600px] px-5 py-6 sm:px-8 lg:px-10">
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div class="flex items-center gap-2 text-stone-500">
+          <span>⚑</span
+          ><button (click)="leaveCompany()" class="hover:text-[#2864dc]">Company pages</button
+          ><span>›</span><b class="text-stone-800">{{ company.name }}</b>
+        </div>
+        <div class="rounded-full bg-[#eaf5ee] px-4 py-2 text-xs font-medium text-[#3d775d]">
+          ✓ &nbsp;{{ pageNotice }}
+        </div>
+      </div>
+
+      @if (selectedSection === 'overview') {
+      <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <div class="grid min-h-[220px] overflow-hidden md:grid-cols-[minmax(300px,.6fr)_1fr]">
+          <div
+            class="relative flex min-h-[220px] flex-col justify-center overflow-hidden bg-[#294b39] px-8 py-8 text-white sm:px-10"
+          >
+            <div
+              class="absolute -right-10 -bottom-24 size-64 rounded-full border border-white/10"
+            ></div>
+            <p class="relative text-[10px] font-semibold tracking-[.18em] text-white/70">
+              COMPANY WORKSPACE
+            </p>
+            <h1 class="relative mt-3 max-w-md text-3xl leading-tight font-semibold sm:text-4xl">
+              Build something great together.
+            </h1>
+            <p class="relative mt-4 text-xs tracking-wide text-white/70">
+              {{ company.name }} <span class="mx-2">/</span> {{ company.location || 'Your company'
+              }}
+            </p>
+          </div>
+          <div
+            class="relative min-h-[220px] overflow-hidden bg-gradient-to-br from-[#d6e5d2] via-[#88a998] to-[#405f50]"
+          >
+            <div
+              class="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_35%,rgba(255,255,255,.62),transparent_34%),radial-gradient(ellipse_at_80%_65%,rgba(27,57,42,.42),transparent_50%)]"
+            ></div>
+            <div
+              class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/15 to-transparent"
+            ></div>
+            <button
+              class="absolute right-5 bottom-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm"
+              (click)="pageNotice = 'Cover editing will be available soon'"
             >
-            <div>
-              <h2 class="text-2xl font-semibold">{{ company.name }}</h2>
+              ▧ &nbsp; Edit cover
+            </button>
+          </div>
+        </div>
+        <div
+          class="flex flex-wrap items-center justify-between gap-5 border-b border-stone-200 px-6 py-5 sm:px-8"
+        >
+          <div class="flex min-w-0 items-center gap-4">
+            <span
+              class="grid size-[72px] shrink-0 place-items-center overflow-hidden rounded-xl bg-[#294b39] text-2xl font-semibold text-white"
+              >@if (company.logo) {
+              <img
+                [src]="company.logo"
+                [alt]="company.name + ' logo'"
+                class="size-full object-cover"
+              />
+              } @else { {{ company.name.slice(0, 1).toUpperCase() }} }</span
+            >
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ company.name }}</h2>
+                <span
+                  class="rounded-md bg-[#eaf5ee] px-2 py-1 text-[10px] font-semibold text-[#3d775d]"
+                  >COMPANY</span
+                >
+              </div>
               <p class="mt-1 text-sm text-stone-500">
-                {{ company.location || 'Company workspace' }}
+                {{ company.location || 'Company page' }} · {{ company.employeeIds.length }}
+                employees
+              </p>
+              <p class="mt-1 max-w-2xl truncate text-sm text-stone-500">
+                {{ company.description }}
               </p>
             </div>
           </div>
+          <div class="flex gap-2">
+            <button
+              class="rounded-xl bg-[#e9f0ff] px-4 py-3 text-sm font-semibold text-[#2864dc]"
+              (click)="selectedSection = 'settings'"
+            >
+              ✎ &nbsp; Edit page</button
+            ><button
+              class="rounded-xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-700"
+              (click)="pageNotice = 'Visitor preview is ready'"
+            >
+              ↗ &nbsp; View as visitor
+            </button>
+          </div>
+        </div>
+        <nav class="flex flex-wrap items-center gap-1 px-6 sm:px-8" aria-label="Company page tabs">
+          @for (tab of
+          [{key:'posts',label:'Posts'},{key:'about',label:'About'},{key:'photos',label:'Photos'},{key:'reviews',label:'Reviews'},{key:'more',label:'More'}];
+          track tab.key) {
           <button
-            class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm text-white"
-            (click)="selectedSection = 'employees'"
+            class="border-b-2 px-3 py-4 text-sm"
+            [class.border-[#2864dc]]="selectedPageTab === tab.key"
+            [class.text-[#2864dc]]="selectedPageTab === tab.key"
+            [class.border-transparent]="selectedPageTab !== tab.key"
+            [class.text-stone-500]="selectedPageTab !== tab.key"
+            (click)="selectedPageTab = $any(tab.key)"
           >
-            Manage team
+            {{ tab.label }}
           </button>
-        </div>
-        <nav class="my-5 flex flex-wrap gap-2 border-b border-stone-200 pb-3">
-          @for (item of
-          [{key:'overview',label:'Overview'},{key:'jobs',label:'Jobs'},{key:'projects',label:'Projects'},{key:'roles',label:'Roles'},{key:'employees',label:'Employees'},{key:'settings',label:'Settings'}];
-          track item.key) {<button
-            class="rounded-full px-3 py-2 text-xs font-medium"
-            [class.bg-[#e8f3ff]]="selectedSection === item.key"
-            [class.text-[#0a66c2]]="selectedSection === item.key"
-            [class.bg-stone-100]="selectedSection !== item.key"
-            (click)="selectedSection = $any(item.key)"
+          }
+          <span class="ml-auto hidden items-center gap-2 py-4 text-xs text-stone-400 sm:flex"
+            >◎ &nbsp; Company page</span
           >
-            {{ item.label }}</button
-          >}
         </nav>
-        @if (selectedSection === 'overview') {
-        <h3 class="text-lg font-semibold">{{ company.name }} workspace</h3>
-        <p class="mt-2 max-w-xl text-sm leading-6 text-stone-500">{{ company.description }}</p>
-        <div class="mt-6 grid gap-3 sm:grid-cols-3">
-          <div class="rounded-xl bg-stone-50 p-4">
-            <b>{{ company.employeeIds.length }}</b>
-            <p class="mt-1 text-xs text-stone-500">Employees</p>
+      </section>
+
+      <section class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @for (metric of
+        [{label:'Employees',value:company.employeeIds.length,icon:'♧',period:'Current'},{label:'Projects',value:company.projectIds.length,icon:'◉',period:'All
+        time'},{label:'Open
+        jobs',value:company.jobIds.length,icon:'▤',period:'Current'},{label:'Company
+        status',value:'Live',icon:'◉',period:'Page'}]; track metric.label) {
+        <div class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5">
+          <span
+            class="grid size-11 shrink-0 place-items-center rounded-xl bg-[#e9f0ff] text-lg text-[#2864dc]"
+            >{{ metric.icon }}</span
+          >
+          <div class="min-w-0">
+            <b class="block text-2xl font-medium">{{ metric.value }}</b>
+            <p class="mt-0.5 text-xs text-stone-500">{{ metric.label }}</p>
           </div>
-          <div class="rounded-xl bg-stone-50 p-4">
-            <b>{{ company.projectIds.length }}</b>
-            <p class="mt-1 text-xs text-stone-500">Projects</p>
-          </div>
-          <div class="rounded-xl bg-stone-50 p-4">
-            <b>{{ company.jobIds.length }}</b>
-            <p class="mt-1 text-xs text-stone-500">Jobs</p>
-          </div>
+          <span class="ml-auto self-start text-[10px] text-stone-400">{{ metric.period }}</span>
         </div>
-        } @else if (selectedSection === 'employees') {
-        <h3 class="text-lg font-semibold">Employees</h3>
-        <p class="mt-1 text-sm text-stone-500">Invite an existing Career Space user by email.</p>
-        <div class="mt-4 flex max-w-lg gap-2">
+        }
+      </section>
+
+      <section class="mt-5 grid gap-5 xl:grid-cols-[minmax(280px,.75fr)_minmax(0,1.8fr)]">
+        <div class="space-y-5">
+          <article class="rounded-2xl border border-stone-200 bg-white p-6">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">Set up your company page</h3>
+              <span class="text-xs text-[#3d775d]">3 / 5</span>
+            </div>
+            <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-stone-100">
+              <div class="h-full w-3/5 rounded-full bg-[#3d775d]"></div>
+            </div>
+            <p class="mt-4 text-xs text-stone-500">Your page is ready to grow with your team.</p>
+            <div class="mt-4 space-y-3 text-sm">
+              <button
+                class="flex w-full items-center gap-3 text-left text-stone-600"
+                (click)="selectedSection = 'settings'"
+              >
+                <span class="text-[#3d775d]">✓</span> Add company details</button
+              ><button
+                class="flex w-full items-center gap-3 text-left text-stone-600"
+                (click)="selectedSection = 'employees'"
+              >
+                <span class="text-[#2864dc]">＋</span> Invite your first employees
+                <span class="ml-auto">›</span></button
+              ><button
+                class="flex w-full items-center gap-3 text-left text-stone-600"
+                (click)="selectedSection = 'projects'"
+              >
+                <span class="text-[#2864dc]">＋</span> Add a project <span class="ml-auto">›</span>
+              </button>
+            </div>
+          </article>
+          <article class="rounded-2xl border border-stone-200 bg-white p-6">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">About {{ company.name }}</h3>
+              <button
+                class="text-xs font-semibold text-[#2864dc]"
+                (click)="selectedSection = 'settings'"
+              >
+                Edit
+              </button>
+            </div>
+            <p class="mt-4 text-sm leading-6 text-stone-500">{{ company.description }}</p>
+            <div class="mt-4 space-y-3 text-sm text-stone-500">
+              <p>⌖ &nbsp;{{ company.location || 'Location not set' }}</p>
+              @if (company.website) {
+              <p>◎ &nbsp;{{ company.website }}</p>
+              }
+            </div>
+          </article>
+        </div>
+        <div class="space-y-5">
+          <article
+            class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-5"
+          >
+            <div class="flex items-center gap-3">
+              <span
+                class="grid size-12 place-items-center rounded-xl bg-[#294b39] font-semibold text-white"
+                >{{ company.name.slice(0, 1).toUpperCase() }}</span
+              >
+              <div>
+                <p class="text-sm font-medium">Share an update with your team</p>
+                <p class="mt-1 text-xs text-stone-500">Posting as {{ company.name }}</p>
+              </div>
+            </div>
+            <button
+              class="rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white"
+              (click)="pageNotice = 'Post creation will be available soon'"
+            >
+              ＋ &nbsp; Create post
+            </button>
+          </article>
+          <article class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+            <div class="flex items-center gap-3 p-5">
+              <span
+                class="grid size-11 place-items-center rounded-xl bg-[#294b39] font-semibold text-white"
+                >{{ company.name.slice(0, 1).toUpperCase() }}</span
+              >
+              <div>
+                <b class="text-sm">{{ company.name }}</b>
+                <p class="mt-1 text-xs text-stone-400">Company update · Public</p>
+              </div>
+              <button class="ml-auto text-stone-400" aria-label="More post actions">•••</button>
+            </div>
+            <p class="px-5 pb-5 text-sm leading-6 text-stone-700">
+              Welcome to {{ company.name }}. {{ company.description }}
+            </p>
+            <div
+              class="flex min-h-48 items-center justify-center bg-gradient-to-br from-[#dce9df] via-[#a9c1ad] to-[#597765]"
+            >
+              <span class="text-5xl font-semibold text-white/80"
+                >{{ company.name.slice(0, 1).toUpperCase() }}</span
+              >
+            </div>
+            <div
+              class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-xs text-stone-400"
+            >
+              <span
+                >Company page · {{ company.projectIds.length }} projects · {{
+                company.employeeIds.length }} employees</span
+              ><button class="font-semibold text-[#2864dc]" (click)="selectedSection = 'projects'">
+                View projects
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+      } @else if (selectedSection === 'projects') {
+        <app-projects-page [pageId]="company._id"></app-projects-page>
+      } @else if (selectedSection === 'jobs') {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        <h1 class="text-2xl font-semibold">Jobs</h1>
+        <p class="mt-1 text-sm text-stone-500">Publish jobs for {{ company.name }}.</p>
+        <form class="mt-5 grid max-w-2xl gap-3" (ngSubmit)="createPageJob(company._id)">
           <input
             class="profile-input"
+            [(ngModel)]="jobTitle"
+            name="jobTitle"
+            placeholder="Job title"
+            required
+          /><input
+            class="profile-input"
+            [(ngModel)]="jobLocation"
+            name="jobLocation"
+            placeholder="Location"
+            required
+          /><textarea
+            class="profile-input"
+            [(ngModel)]="jobDescription"
+            name="jobDescription"
+            placeholder="Job description"
+            rows="3"
+          ></textarea
+          ><button class="w-fit rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white">
+            Create job
+          </button>
+        </form>
+      </section>
+      } @else if (selectedSection === 'employees') {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        <h1 class="text-2xl font-semibold">Employees</h1>
+        <p class="mt-1 text-sm text-stone-500">Invite an existing Career Space user by email.</p>
+        <div class="mt-5 flex max-w-2xl flex-wrap gap-2">
+          <input
+            class="profile-input min-w-[220px] flex-1"
             [(ngModel)]="employeeEmail"
             name="employeeEmail"
             placeholder="Employee email"
           /><button
-            class="rounded-xl bg-[#0a66c2] px-4 text-sm text-white"
+            class="rounded-xl bg-[#2864dc] px-5 text-sm text-white"
             (click)="selected = company._id; addEmployee()"
           >
-            Add
+            Add employee
           </button>
         </div>
-        } @else {
-        <div class="rounded-xl border border-dashed border-stone-200 p-8">
-          <h3 class="font-semibold">{{ selectedSection | titlecase }}</h3>
-          <p class="mt-2 text-sm text-stone-500">
-            This company area is ready for publishing and managing company {{ selectedSection }}.
-          </p>
+      </section>
+      } @else {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        <div class="text-[10px] font-semibold tracking-[.16em] text-[#2864dc]">
+          {{ company.name }} · COMPANY WORKSPACE
         </div>
-        }
+        <h1 class="mt-2 text-3xl font-semibold">{{ selectedSection | titlecase }}</h1>
+        <p class="mt-2 text-sm text-stone-500">
+          Manage {{ selectedSection }} for {{ company.name }}.
+        </p>
+      </section>
+      } @if (projectDialog) {
+      <div
+        class="fixed inset-0 z-30 grid place-items-center bg-stone-900/30 p-5"
+        (click)="closeProjectDialog()"
+      >
+        <form
+          class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+          (ngSubmit)="createPageProject(company._id); closeProjectDialog()"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold">Create project</h2>
+            <button type="button" class="text-stone-400" (click)="closeProjectDialog()">×</button>
+          </div>
+          <p class="mt-1 text-sm text-stone-500">This project will belong to {{ company.name }}.</p>
+          <div class="mt-5 grid gap-3">
+            <input
+              class="profile-input"
+              [(ngModel)]="projectTitle"
+              name="dialogProjectTitle"
+              placeholder="Project title"
+              required
+            /><textarea
+              class="profile-input"
+              [(ngModel)]="projectSummary"
+              name="dialogProjectSummary"
+              placeholder="Short project summary"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+          <button
+            class="mt-5 w-full rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white"
+          >
+            Save project
+          </button>
+        </form>
       </div>
-    </main>
-    }
+      }
+    </div>
   </div>
-</section>
+</div>
+}

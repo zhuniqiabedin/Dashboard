@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class SkillsChipsComponent {
   @Input() skills: string[] = [];
+  @Input() readOnly = false;
   @Output() skillsChange = new EventEmitter<string[]>();
   value = '';
 

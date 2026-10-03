@@ -151,8 +151,9 @@
       ></button>
     }
     <aside
-      class="fixed inset-y-0 left-0 z-40 flex w-[248px] -translate-x-full flex-col border-r border-stone-200/70 bg-white px-4 py-5 transition-transform md:translate-x-0"
+      class="fixed top-[72px] bottom-0 left-0 z-10 flex w-[248px] -translate-x-full flex-col overflow-hidden border-r border-stone-200/70 bg-white px-4 py-5 transition-transform md:translate-x-0"
       [class.translate-x-0]="mobileOpen"
+      [class.hidden]="companyMode"
       [class.hidden]="companyMode"
     >
       <a
@@ -187,7 +188,7 @@
           ><span>▦</span> Calendar</a
         ><a routerLink="/cv" routerLinkActive="nav-active" class="nav-item"><span>▤</span> My CV</a>
         <a routerLink="/companies" routerLinkActive="nav-active" class="nav-item"
-          ><span>▥</span> Companies</a
+          ><span>▥</span> Pages</a
         >
       </nav>
       <div class="mt-auto rounded-2xl bg-[#f3f8fc] p-4">
@@ -200,11 +201,12 @@
         </div>
       </div>
     </aside>
-    <main class="min-h-screen md:pl-[248px]" [class.md:pl-0]="companyMode">
+    <main class="min-h-screen w-full pt-[72px]" [class.md:pl-0]="companyMode" [class.md:pl-[248px]]="!companyMode">
       <header
-        class="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-stone-200/70 bg-white/90 px-5 backdrop-blur sm:px-8 lg:px-10"
+        class="fixed top-0 right-0 left-0 z-20 flex h-[72px] items-center justify-between border-b border-stone-200/70 bg-white/95 px-5 backdrop-blur sm:px-8 lg:px-10"
       >
-        <div class="flex min-w-0 items-center gap-4">
+        <div class="flex min-w-0 items-center gap-5">
+          <a routerLink="/overview" class="flex shrink-0 items-center gap-2 text-2xl font-bold tracking-tight text-[#2864dc]"><span class="grid size-10 place-items-center rounded-xl bg-[#2864dc] text-xl text-white"><fa-icon [icon]="faLayers"></fa-icon></span><span class="hidden sm:inline">gather</span></a>
           <button
             class="text-xl text-stone-500 md:hidden"
             (click)="mobileOpen = !mobileOpen"
@@ -212,18 +214,18 @@
           >
             ☰</button
           ><label
-            class="hidden h-10 w-[min(38vw,390px)] items-center gap-2.5 rounded-xl border border-stone-200 bg-[#ffffff] px-3 text-stone-400 sm:flex"
-            ><span class="text-base">⌕</span
+            class="hidden h-14 w-[min(38vw,470px)] items-center gap-3 rounded-full bg-[#f1f3f7] px-5 text-stone-400 sm:flex"
+            ><fa-icon [icon]="faMagnifyingGlass"></fa-icon
             ><input
               class="w-full bg-transparent text-sm text-stone-700 outline-none placeholder:text-stone-400"
-              placeholder="Search anything..."
+              placeholder="Search Gather"
               [(ngModel)]="search"
               aria-label="Search"
             /><kbd class="rounded border border-stone-200 bg-white px-1.5 py-0.5 text-[10px]"
               >⌘ K</kbd
             ></label
           ><a
-            routerLink="/discover"
+            routerLink="/discover_projects"
             routerLinkActive="bg-[#e8f3ff] text-[#0a66c2]"
             class="hidden shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-stone-500 transition hover:bg-stone-50 sm:flex"
             aria-label="Discover projects and jobs"
@@ -231,16 +233,16 @@
             <span>⌕</span> Discover projects
           </a>
         </div>
+        <nav class="hidden items-center gap-8 text-xl text-stone-400 lg:flex" aria-label="Primary navigation"><a routerLink="/overview" routerLinkActive="text-[#2864dc]" aria-label="Home"><fa-icon [icon]="faHouse"></fa-icon></a><a routerLink="/profile" routerLinkActive="text-[#2864dc]" aria-label="People"><fa-icon [icon]="faPeopleGroup"></fa-icon></a><a routerLink="/discover_projects" routerLinkActive="text-[#2864dc]" aria-label="Discover projects"><fa-icon [icon]="faCompass"></fa-icon></a><a routerLink="/projects" routerLinkActive="text-[#2864dc]" aria-label="Projects"><fa-icon [icon]="faPlay"></fa-icon></a></nav>
         <div class="relative flex items-center gap-3">
-          <span class="hidden text-xs text-stone-400 sm:block">{{ todayLabel }}</span
-          ><button
+          <button class="grid size-11 place-items-center rounded-full bg-[#f5f6f8] text-xl text-stone-700 hover:bg-[#e8f3ff]" aria-label="Messages" (click)="notice = 'No new messages.'"><fa-icon [icon]="faComments"></fa-icon></button><button
             class="relative grid size-9 place-items-center rounded-xl text-lg text-stone-500 hover:bg-stone-100"
             (click)="notice = notice ? '' : 'You’re all caught up.'"
             aria-label="Notifications"
           >
-            ♧<i class="absolute top-2 right-2 size-1.5 rounded-full bg-[#c68b68]"></i></button
+            <fa-icon [icon]="faBell"></fa-icon><i class="absolute top-1 right-1 size-1.5 rounded-full bg-[#2864dc]"></i></button
           ><button
-            class="flex items-center gap-2 rounded-full p-1 pr-2 hover:bg-stone-100"
+            class="flex items-center gap-2 rounded-full border-l border-stone-200 pl-4 pr-1 hover:bg-stone-100"
             (click)="userMenu = !userMenu"
             aria-label="User menu"
           >
@@ -252,10 +254,7 @@
               } @else {
                 {{ initials }}
               }</span
-            ><span class="hidden max-w-28 truncate text-xs font-medium sm:block">{{
-              firstName
-            }}</span
-            ><span class="text-[10px] text-stone-400">⌄</span>
+            ><span class="hidden max-w-28 truncate text-sm font-medium sm:block">{{ user.name }}<small class="mt-0.5 block text-xs font-normal text-stone-400">Personal account</small></span><span class="text-sm text-stone-400"><fa-icon [icon]="faChevronDown"></fa-icon></span>
           </button>
           @if (userMenu) {
             <div
@@ -290,9 +289,12 @@
           {{ notice }} &nbsp; ×
         </button>
       }
-      <div class="mx-auto max-w-[1440px] px-5 pt-8 pb-10 sm:px-8 lg:px-10">
+      <div
+        [class]="companyMode ? 'w-full' : 'mx-auto max-w-[1440px] px-5 pt-8 pb-10 sm:px-8 lg:px-10'"
+      >
         <router-outlet></router-outlet>
         <footer
+          [class.hidden]="companyMode"
           class="mt-12 flex justify-between border-t border-stone-200/80 pt-5 text-[11px] text-stone-400"
         >
           <span>Made for your next chapter <b class="text-[#0a66c2]">✳</b></span

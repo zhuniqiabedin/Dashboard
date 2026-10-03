@@ -11,6 +11,9 @@ export class ProjectsController {
   @Get('mine') list(@Req() request: AuthenticatedRequest): Promise<Record<string, unknown>[]> {
     return this.projects.listMine(request.user.sub);
   }
+  @Get('page/:pageId') listForPage(@Req() request: AuthenticatedRequest, @Param('pageId') pageId: string) {
+    return this.projects.listForPage(request.user.sub, pageId);
+  }
   @Post() create(@Req() request: AuthenticatedRequest, @Body() input: CreateProjectDto) {
     return this.projects.create(request.user.sub, input);
   }

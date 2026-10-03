@@ -6,6 +6,8 @@ export type ProjectDocument = HydratedDocument<Project>;
 
 @Schema({ timestamps: true, collection: 'projects' })
 export class Project {
+  @Prop({ type: Types.ObjectId, ref: 'Company', index: true })
+  pageId?: Types.ObjectId;
   @Prop({ type: Types.ObjectId, required: true, ref: 'User', index: true })
   userId!: Types.ObjectId;
 
@@ -20,6 +22,9 @@ export class Project {
   @Prop({ required: true, type: Date }) startDate!: Date;
   @Prop({ type: Date }) endDate?: Date;
   @Prop({ type: [String], default: [] }) skills!: string[];
+  @Prop({ default: false, index: true }) isPublished!: boolean;
+  @Prop({ type: Date }) publishAt?: Date;
+  @Prop({ type: Date }) unpublishAt?: Date;
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);

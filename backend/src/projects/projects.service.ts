@@ -4,24 +4,33 @@ import { Model } from 'mongoose';
 import { Branches } from '../branches.enum';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { Project, ProjectDocument } from './project.schema';
+import { Company, CompanyDocument } from '../companies/company.schema';
 
 @Injectable()
 export class ProjectsService {
-  constructor(@InjectModel(Project.name) private readonly projects: Model<ProjectDocument>) {}
+  constructor(@InjectModel(Project.name) private readonly projects: Model<ProjectDocument>, @InjectModel(Company.name) private readonly companies: Model<CompanyDocument>) {}
+
+  async listForPage(userId: string, pageId: string): Promise<Record<string, unknown>[]> {
+    const page = await this.companies.findById(pageId).lean();
+    if (!page) throw new NotFoundException('Page not found.');
+    const member = page.ownerId.toString() === userId || page.employeeIds.some((id) => id.toString() === userId);
+    const projects = await this.projects.find({ pageId }).sort({ createdAt: -1 }).populate('userId', 'name email').lean();
+    return projects.map(({ _id, userId: creator, ...project }) => ({ ...project, isPublished: this.isCurrentlyPublished(project), id: _id.toString(), pageName: page.name, ...(member ? { createdBy: creator } : {}) }));
+  }
 
   listMine(userId: string): Promise<Record<string, unknown>[]> {
     return this.projects
-      .find({ userId })
+      .find({ userId, $or: [{ pageId: { $exists: false } }, { pageId: null }] })
       .sort({ createdAt: -1 })
       .lean()
       .then((projects) =>
-        projects.map(({ _id, ...project }) => ({ ...project, id: _id.toString() })),
+        projects.map(({ _id, ...project }) => ({ ...project, isPublished: this.isCurrentlyPublished(project), id: _id.toString() })),
       );
   }
 
   async create(userId: string, input: CreateProjectDto) {
     const data = this.validate(input);
-    return this.projects.create({ ...data, userId });
+    return this.projects.create({ ...data, userId, ...(input.pageId ? { pageId: input.pageId } : {}) });
   }
 
   async update(userId: string, id: string, input: UpdateProjectDto) {
@@ -82,6 +91,11 @@ export class ProjectsService {
     ]
       .filter((skill) => skill.length > 0 && skill.length <= 50)
       .slice(0, 30);
+    const publishAt = input.publishAt ? new Date(input.publishAt) : undefined;
+    const unpublishAt = input.unpublishAt ? new Date(input.unpublishAt) : undefined;
+    if (input.publishAt && Number.isNaN(publishAt?.getTime())) throw new BadRequestException('Invalid publish date.');
+    if (input.unpublishAt && Number.isNaN(unpublishAt?.getTime())) throw new BadRequestException('Invalid unpublish date.');
+    if (publishAt && unpublishAt && unpublishAt <= publishAt) throw new BadRequestException('Unpublish date must be after publish date.');
     return {
       title: input.title.trim(),
       summary: input.summary.trim(),
@@ -93,6 +107,17 @@ export class ProjectsService {
       startDate,
       ...(endDate ? { endDate } : {}),
       skills: uniqueSkills,
+      isPublished: input.isPublished === true,
+      ...(publishAt ? { publishAt } : {}),
+      ...(unpublishAt ? { unpublishAt } : {}),
     };
+  }
+
+  private isCurrentlyPublished(project: { isPublished?: boolean; publishAt?: Date; unpublishAt?: Date }): boolean {
+    const now = Date.now();
+    if (!project.isPublished) return false;
+    if (project.publishAt && new Date(project.publishAt).getTime() > now) return false;
+    if (project.unpublishAt && new Date(project.unpublishAt).getTime() <= now) return false;
+    return true;
   }
 }

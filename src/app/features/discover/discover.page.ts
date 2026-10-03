@@ -143,8 +143,8 @@ export class DiscoverPage {
         this.selectedCategory === 'All' || post.category === this.selectedCategory;
       const branchMatches = this.selectedBranch === 'All' || post.branch === this.selectedBranch;
       const mySkills = this.cvService.cv().skills.map((skill) => skill.toLowerCase());
-      const skillMatches =
-        !this.matchMySkills || post.tags.some((tag) => mySkills.includes(tag.toLowerCase()));
+      const matchingSkills = post.tags.filter((tag) => mySkills.includes(tag.toLowerCase())).length;
+      const skillMatches = mySkills.length === 0 || matchingSkills / Math.max(post.tags.length, 1) >= 0.5;
       return typeMatches && categoryMatches && branchMatches && skillMatches;
     });
   }

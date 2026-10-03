@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ProjectsPage } from './projects.page';
-import { SkillsChipsComponent } from '../../shared/skills-chips/skills-chips.component';
+import { ProjectDetailPage } from './project-detail.page';
 @NgModule({
-  declarations: [ProjectsPage],
+  declarations: [],
   imports: [
     CommonModule,
     FormsModule,
-    SkillsChipsComponent,
-    RouterModule.forChild([{ path: '', component: ProjectsPage }]),
+    ProjectsPage,
+    RouterModule.forChild([{ path: '', component: ProjectsPage }, { path: ':id', component: ProjectDetailPage }]),
   ],
 })
 export class ProjectsModule {}
