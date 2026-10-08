@@ -23,6 +23,15 @@ type Profile = {
   templateUrl: './profile.page.html',
 })
 export class ProfilePage implements OnInit {
+  skillsList(): string[] {
+    return this.profile.skills
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+  }
+  setSkills(skills: string[]): void {
+    this.profile.skills = skills.join(', ');
+  }
   readonly branches = Object.values(Branches).filter((branch) => branch !== Branches.All);
   notice = '';
   pictureError = '';

@@ -3,7 +3,23 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faBell, faCompass, faComments, faHouse, faMagnifyingGlass, faPeopleGroup, faPlay, faChevronDown, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBell,
+  faCompass,
+  faComments,
+  faHouse,
+  faMagnifyingGlass,
+  faPeopleGroup,
+  faPlay,
+  faChevronDown,
+  faLayerGroup,
+  faFileLines,
+  faFlag,
+  faBookmark,
+  faCalendarDays,
+  faUsers,
+  faPlus,
+} from '@fortawesome/free-solid-svg-icons';
 import { AuthService, AuthUser } from './core/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -16,7 +32,21 @@ type User = AuthUser;
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  readonly faBell = faBell; readonly faCompass = faCompass; readonly faComments = faComments; readonly faHouse = faHouse; readonly faMagnifyingGlass = faMagnifyingGlass; readonly faPeopleGroup = faPeopleGroup; readonly faPlay = faPlay; readonly faChevronDown = faChevronDown; readonly faLayers = faLayerGroup;
+  readonly faBell = faBell;
+  readonly faCompass = faCompass;
+  readonly faComments = faComments;
+  readonly faHouse = faHouse;
+  readonly faMagnifyingGlass = faMagnifyingGlass;
+  readonly faPeopleGroup = faPeopleGroup;
+  readonly faPlay = faPlay;
+  readonly faChevronDown = faChevronDown;
+  readonly faLayers = faLayerGroup;
+  readonly faFileLines = faFileLines;
+  readonly faFlag = faFlag;
+  readonly faBookmark = faBookmark;
+  readonly faCalendarDays = faCalendarDays;
+  readonly faUsers = faUsers;
+  readonly faPlus = faPlus;
   user: User | null = null;
   signup = false;
   mobileOpen = false;
@@ -29,12 +59,17 @@ export class AppComponent {
   busy = false;
   companyMode = false;
 
-  constructor(private readonly auth: AuthService, private readonly router: Router) {
+  constructor(
+    private readonly auth: AuthService,
+    private readonly router: Router,
+  ) {
     this.user = this.readUser();
-    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
-      const parts = event.urlAfterRedirects.split('/').filter(Boolean);
-      this.companyMode = parts[0] === 'companies' && parts.length >= 2;
-    });
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        const parts = event.urlAfterRedirects.split('/').filter(Boolean);
+        this.companyMode = parts[0] === 'companies' && parts.length >= 2;
+      });
   }
 
   private readUser(): User | null {

@@ -34,7 +34,7 @@
           ›</button
         ><button
           class="ml-auto rounded-lg border border-stone-200 px-3 py-2 text-xs hover:bg-stone-50"
-          (click)="offset = 0"
+          (click)="goToday()"
         >
           Today
         </button>
@@ -48,11 +48,13 @@
         <button
           class="relative flex min-h-16 flex-col items-center border-t border-stone-100 py-2 text-sm hover:bg-[#f3f8fc] sm:min-h-20"
           [class.text-stone-300]="day < 1 || day > monthLength"
-          [class.font-semibold]="day === 23 && offset === 0"
+          [class.font-semibold]="isToday(day)"
+          [class.bg-[#e8f3ff]]="isToday(day)"
+          [class.text-[#0a66c2]]="isToday(day)"
           (click)="selected = day"
         >
           {{ day < 1 ? prevLength + day : day > monthLength ? day - monthLength : day }} @if (day
-          === 23 && offset === 0) {
+          && isToday(day)) {
           <i class="mt-1 size-1.5 rounded-full bg-[#0a66c2]"></i>
           } @if (day === 25 || day === 29) {
           <i class="mt-1 size-1.5 rounded-full bg-[#a78bb6]"></i>
@@ -64,7 +66,7 @@
     <section class="rounded-2xl border border-stone-200/80 bg-white p-5">
       <div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR AGENDA</div>
       <h2 class="mt-1 text-lg font-semibold">
-        {{ selected === 23 && offset === 0 ? "Today" : "Selected day, " + selected }}
+        {{ isToday(selected) ? "Today" : "Selected day, " + selected }}
       </h2>
       <div class="mt-6 space-y-5">
         <div class="flex gap-3">

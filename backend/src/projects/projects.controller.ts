@@ -11,7 +11,19 @@ export class ProjectsController {
   @Get('mine') list(@Req() request: AuthenticatedRequest): Promise<Record<string, unknown>[]> {
     return this.projects.listMine(request.user.sub);
   }
-  @Get('page/:pageId') listForPage(@Req() request: AuthenticatedRequest, @Param('pageId') pageId: string) {
+  @Get('discover') discover(): Promise<Record<string, unknown>[]> {
+    return this.projects.listPublished();
+  }
+  @Get(':id/matching-users') matchingUsers(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ): Promise<Record<string, unknown>[]> {
+    return this.projects.matchingUsers(id, request.user.sub);
+  }
+  @Get('page/:pageId') listForPage(
+    @Req() request: AuthenticatedRequest,
+    @Param('pageId') pageId: string,
+  ) {
     return this.projects.listForPage(request.user.sub, pageId);
   }
   @Post() create(@Req() request: AuthenticatedRequest, @Body() input: CreateProjectDto) {

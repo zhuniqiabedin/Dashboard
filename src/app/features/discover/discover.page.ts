@@ -1,6 +1,11 @@
 import { Component } from '@angular/core';
 import { Branches } from '../../branches';
 import { CvService } from '../../core/cv.service';
+import { ProjectsService } from '../../core/projects.service';
+import { ActivatedRoute } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService } from '../../core/auth.service';
+import { environment } from '../../../environments/environment';
 
 type FeedType = 'All' | 'Projects' | 'Jobs';
 type Post = {
@@ -33,8 +38,50 @@ export class DiscoverPage {
   selectedCategory = 'All';
   selectedBranch = 'All';
   matchMySkills = false;
+  projectId = '';
+  contactUser: any = null;
+  messageText = '';
+  messageNotice = '';
 
-  constructor(private readonly cvService: CvService) {}
+  constructor(
+    private readonly cvService: CvService,
+    public readonly projectsService: ProjectsService,
+    private readonly http: HttpClient,
+    private readonly auth: AuthService,
+    route: ActivatedRoute,
+  ) {
+    this.projectId = route.snapshot.paramMap.get('projectId') ?? '';
+    this.projectId
+      ? this.projectsService.loadMatchingUsers(this.projectId)
+      : this.projectsService.loadPublished();
+  }
+  openContact(user: any): void {
+    this.contactUser = user;
+    this.messageText = '';
+    this.messageNotice = '';
+  }
+  closeContact(): void {
+    this.contactUser = null;
+  }
+  sendMessage(): void {
+    if (!this.contactUser || !this.messageText.trim()) return;
+    this.http
+      .post(
+        `${environment.apiUrl}/messages/${this.contactUser.pageId}/${this.projectId}`,
+        {
+          text: this.messageText.trim(),
+          recipientUserId: this.contactUser.userId ?? this.contactUser._id,
+        },
+        { headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }) },
+      )
+      .subscribe({
+        next: () => {
+          this.messageNotice = 'Message sent.';
+          this.messageText = '';
+        },
+        error: () => (this.messageNotice = 'Message could not be sent.'),
+      });
+  }
 
   readonly types: FeedType[] = ['All', 'Projects', 'Jobs'];
   readonly categories = ['All', 'Product design', 'Engineering', 'Marketing', 'Creative'];
@@ -136,7 +183,28 @@ export class DiscoverPage {
   ];
 
   get filteredPosts(): Post[] {
-    return this.posts.filter((post) => {
+    if (this.projectId) return [];
+    const companyProjects: Post[] = this.projectsService
+      .publishedProjects()
+      .map((project) => ({
+        id: project.id as any,
+        type: 'Project',
+        category: project.category,
+        branch: project.branch,
+        author: 'Company project',
+        authorInitials: 'CP',
+        avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
+        headline: 'Published project',
+        posted: 'Recently',
+        title: project.title,
+        summary: project.summary,
+        details: project.details,
+        tags: project.skills,
+        likes: 0,
+        comments: 0,
+        callToAction: 'View project',
+      }));
+    return companyProjects.filter((post) => {
       const typeMatches =
         this.selectedType === 'All' || post.type === this.selectedType.slice(0, -1);
       const categoryMatches =
@@ -144,7 +212,8 @@ export class DiscoverPage {
       const branchMatches = this.selectedBranch === 'All' || post.branch === this.selectedBranch;
       const mySkills = this.cvService.cv().skills.map((skill) => skill.toLowerCase());
       const matchingSkills = post.tags.filter((tag) => mySkills.includes(tag.toLowerCase())).length;
-      const skillMatches = mySkills.length === 0 || matchingSkills / Math.max(post.tags.length, 1) >= 0.5;
+      const skillMatches =
+        mySkills.length === 0 || matchingSkills / Math.max(post.tags.length, 1) >= 0.5;
       return typeMatches && categoryMatches && branchMatches && skillMatches;
     });
   }

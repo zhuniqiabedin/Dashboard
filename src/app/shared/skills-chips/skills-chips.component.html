@@ -7,26 +7,32 @@
         class="inline-flex items-center gap-1 rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs font-medium text-[#0a66c2]"
       >
         {{ skill }}
-        @if (!readOnly) { <button
-          type="button"
-          class="text-sm leading-none hover:text-[#004182]"
-          (click)="remove(index)"
-          [attr.aria-label]="'Remove ' + skill"
-        >
-          ×
-        </button> }
+        @if (!readOnly) {
+          <button
+            type="button"
+            class="text-sm leading-none hover:text-[#004182]"
+            (click)="remove(index)"
+            [attr.aria-label]="'Remove ' + skill"
+          >
+            ×
+          </button>
+        }
       </span>
     }
-    @if (!readOnly) { <input
-      class="min-w-32 flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none"
-      [(ngModel)]="value"
-      (keydown)="onKeydown($event)"
-      (blur)="addFromInput()"
-      placeholder="Type a skill and press Enter"
-      aria-label="Add a skill"
-    /> }
+    @if (!readOnly) {
+      <input
+        class="min-w-32 flex-1 border-0 bg-transparent px-1 py-1 text-sm outline-none"
+        [(ngModel)]="value"
+        (keydown)="onKeydown($event)"
+        (blur)="addFromInput()"
+        placeholder="Type a skill and press Enter"
+        aria-label="Add a skill"
+      />
+    }
   </div>
 </div>
-@if (!readOnly) { <p class="mt-1 text-xs text-stone-400">
-  Press Enter or comma to add. Duplicate skills are ignored.
-</p> }
+@if (!readOnly) {
+  <p class="mt-1 text-xs text-stone-400">
+    Press Enter or comma to add. Duplicate skills are ignored.
+  </p>
+}

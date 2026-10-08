@@ -1,0 +1,61 @@
+<section
+  class="grid min-h-[calc(100vh-120px)] overflow-hidden rounded-2xl border border-stone-200 bg-white md:grid-cols-[320px_1fr]"
+>
+  <aside class="border-r border-stone-200">
+    <h1 class="border-b border-stone-100 p-5 text-xl font-semibold">Messages</h1>
+    @for (conversation of conversations; track conversation._id) {<button
+      class="w-full border-b border-stone-100 p-4 text-left transition hover:bg-stone-50"
+      [class.bg-[#e8f3ff]]="selected?._id === conversation._id"
+      (click)="selectConversation(conversation)"
+    >
+      <b class="block truncate text-sm">{{ conversationTitle(conversation) }}</b
+      ><span class="mt-1 block truncate text-xs text-stone-400"
+        >{{ conversation.messages?.[conversation.messages.length - 1]?.text || 'Project
+        conversation' }}</span
+      ></button
+    >} @empty {
+    <p class="p-5 text-sm text-stone-500">No messages yet.</p>
+    }
+  </aside>
+  <main class="flex min-w-0 flex-col">
+    <div class="border-b border-stone-100 p-5">
+      <h2 class="font-semibold">
+        {{ selected ? conversationTitle(selected) : 'Select a conversation' }}
+      </h2>
+      <span *ngIf="selected" class="text-xs text-stone-400"
+        >{{ participantOnline(selected) ? 'Online' : 'Offline' }}</span
+      >
+    </div>
+    <div class="flex-1 space-y-3 overflow-y-auto p-5">
+      @for (message of selected?.messages || []; track message._id) {
+      <div class="flex" [class.justify-end]="isOwnMessage(message)">
+        <div
+          class="max-w-xl rounded-2xl p-3 text-sm"
+          [class.bg-[#0a66c2]]="isOwnMessage(message)"
+          [class.text-white]="isOwnMessage(message)"
+          [class.bg-stone-100]="!isOwnMessage(message)"
+        >
+          <div>{{ message.text }}</div>
+          <div
+            class="mt-1 text-[10px]"
+            [class.text-blue-100]="isOwnMessage(message)"
+            [class.text-stone-400]="!isOwnMessage(message)"
+          >
+            {{ messageDate(message) }} · {{ message.readAt ? 'Seen' : 'Sent' }}
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    @if (selected) {
+    <form class="flex gap-2 border-t border-stone-100 p-4" (ngSubmit)="send()">
+      <input
+        class="flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm"
+        [(ngModel)]="text"
+        name="message"
+        placeholder="Write a message..."
+      /><button class="rounded-xl bg-[#0a66c2] px-4 py-2 text-sm text-white">Send</button>
+    </form>
+    }
+  </main>
+</section>

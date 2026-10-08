@@ -183,14 +183,10 @@
           </div>
           <div>
             <label for="profile-skills" class="mb-1.5 block text-sm font-medium">Skills</label>
-            <input
-              id="profile-skills"
-              name="skills"
-              [(ngModel)]="profile.skills"
-              class="profile-input"
-              placeholder="Design, research, communication"
-            />
-            <p class="mt-1 text-[11px] text-stone-400">Separate skills with commas.</p>
+            <app-skills-chips
+              [skills]="skillsList()"
+              (skillsChange)="setSkills($event)"
+            ></app-skills-chips>
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthenticatedRequest, JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AddEmployeeDto, CreateCompanyDto, UpdateEmployeeRoleDto } from './company.dto';
 import { CompaniesService } from './companies.service';
@@ -27,5 +27,8 @@ export class CompaniesController {
     @Body() input: UpdateEmployeeRoleDto,
   ) {
     return this.companies.updateRole(request.user.sub, id, employeeId, input);
+  }
+  @Delete(':id/employees/:employeeId') removeEmployee(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Param('employeeId') employeeId: string) {
+    return this.companies.removeEmployee(request.user.sub, id, employeeId);
   }
 }

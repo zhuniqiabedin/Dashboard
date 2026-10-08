@@ -13,6 +13,8 @@ export class User {
 
   @Prop({ required: true, select: false })
   passwordHash!: string;
+  @Prop({ type: Date, default: Date.now })
+  lastSeen!: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

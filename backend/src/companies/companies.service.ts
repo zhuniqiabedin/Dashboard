@@ -19,6 +19,7 @@ export class CompaniesService {
   listMine(userId: string) {
     return this.companies
       .find({ $or: [{ ownerId: userId }, { employeeIds: userId }] })
+      .populate('employees.userId', 'name email')
       .sort({ createdAt: -1 })
       .lean();
   }
@@ -67,6 +68,15 @@ export class CompaniesService {
     employee.role = input.role;
     await company.save();
     return employee;
+  }
+  async removeEmployee(userId: string, companyId: string, employeeId: string) {
+    const company = await this.companies.findOne({ _id: companyId });
+    if (!company || !this.canManage(company, userId)) throw new NotFoundException('Company not found or you cannot manage employees.');
+    if (company.ownerId.toString() === employeeId) throw new BadRequestException('The company owner cannot be removed.');
+    company.employeeIds = company.employeeIds.filter((id) => id.toString() !== employeeId);
+    company.employees = company.employees.filter((employee) => employee.userId.toString() !== employeeId);
+    await company.save();
+    return { ok: true };
   }
 
   private canManage(company: CompanyDocument, userId: string): boolean {

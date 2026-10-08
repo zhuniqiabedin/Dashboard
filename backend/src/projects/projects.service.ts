@@ -5,17 +5,81 @@ import { Branches } from '../branches.enum';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { Project, ProjectDocument } from './project.schema';
 import { Company, CompanyDocument } from '../companies/company.schema';
+import { Profile, ProfileDocument } from '../profiles/profile.schema';
 
 @Injectable()
 export class ProjectsService {
-  constructor(@InjectModel(Project.name) private readonly projects: Model<ProjectDocument>, @InjectModel(Company.name) private readonly companies: Model<CompanyDocument>) {}
+  constructor(
+    @InjectModel(Project.name) private readonly projects: Model<ProjectDocument>,
+    @InjectModel(Company.name) private readonly companies: Model<CompanyDocument>,
+    @InjectModel(Profile.name) private readonly profiles: Model<ProfileDocument>,
+  ) {}
+
+  async matchingUsers(projectId: string, userId: string): Promise<Record<string, unknown>[]> {
+    const project = await this.projects
+      .findOne({ _id: projectId, pageId: { $exists: true, $ne: null } })
+      .lean();
+    if (!project) throw new NotFoundException('Published project not found.');
+    const required = new Set(
+      (project.skills ?? []).map((skill) => skill.toLowerCase().trim()).filter(Boolean),
+    );
+
+    console.log(required, "requird")
+    if (!required.size) return [];
+    const profiles = await this.profiles
+      .find({})
+      .select('userId name headline location skills photo')
+      .lean();
+    const userProjects = await this.projects
+      .find({ $or: [{ pageId: { $exists: false } }, { pageId: null }] })
+      .select('userId title summary skills hourlyRate')
+      .lean();
+      console.log(profiles, "profiles")
+    return profiles
+      .map((profile) => {
+        const rawSkills = String(profile.skills ?? '').trim();
+        let skills: string[];
+        try {
+          const parsed = JSON.parse(rawSkills);
+          skills = Array.isArray(parsed) ? parsed.map(String) : rawSkills.split(',');
+        } catch {
+          skills = rawSkills.split(',');
+        }
+        skills = skills.map((skill) => skill.toLowerCase().trim()).filter(Boolean);
+        const matchedSkills = skills.filter((skill) => required.has(skill));
+        console.log(matchedSkills, "matchedSkills")
+        return {
+          ...profile,
+          projects: userProjects
+            .filter((item) => String(item.userId) === String(profile.userId))
+            .map((item) => ({ title: item.title, summary: item.summary, skills: item.skills, hourlyRate: item.hourlyRate ?? 0 })),
+          pageId: String(project.pageId),
+          projectId,
+          match: Math.round((matchedSkills.length / required.size) * 100),
+          matchedSkills,
+        };
+      })
+      .filter((profile) => profile.match >= 50)
+      .sort((a, b) => b.match - a.match);
+  }
 
   async listForPage(userId: string, pageId: string): Promise<Record<string, unknown>[]> {
     const page = await this.companies.findById(pageId).lean();
     if (!page) throw new NotFoundException('Page not found.');
-    const member = page.ownerId.toString() === userId || page.employeeIds.some((id) => id.toString() === userId);
-    const projects = await this.projects.find({ pageId }).sort({ createdAt: -1 }).populate('userId', 'name email').lean();
-    return projects.map(({ _id, userId: creator, ...project }) => ({ ...project, isPublished: this.isCurrentlyPublished(project), id: _id.toString(), pageName: page.name, ...(member ? { createdBy: creator } : {}) }));
+    const member =
+      page.ownerId.toString() === userId || page.employeeIds.some((id) => id.toString() === userId);
+    const projects = await this.projects
+      .find({ pageId })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'name email')
+      .lean();
+    return projects.map(({ _id, userId: creator, ...project }) => ({
+      ...project,
+      isPublished: this.isCurrentlyPublished(project),
+      id: _id.toString(),
+      pageName: page.name,
+      ...(member ? { createdBy: creator } : {}),
+    }));
   }
 
   listMine(userId: string): Promise<Record<string, unknown>[]> {
@@ -24,13 +88,37 @@ export class ProjectsService {
       .sort({ createdAt: -1 })
       .lean()
       .then((projects) =>
-        projects.map(({ _id, ...project }) => ({ ...project, isPublished: this.isCurrentlyPublished(project), id: _id.toString() })),
+        projects.map(({ _id, ...project }) => ({
+          ...project,
+          isPublished: this.isCurrentlyPublished(project),
+          id: _id.toString(),
+        })),
+      );
+  }
+
+  listPublished(): Promise<Record<string, unknown>[]> {
+    const now = new Date();
+    return this.projects
+      .find({
+        pageId: { $exists: true, $ne: null },
+        isPublished: true,
+        $or: [{ publishAt: { $exists: false } }, { publishAt: { $lte: now } }],
+        $and: [{ $or: [{ unpublishAt: { $exists: false } }, { unpublishAt: { $gt: now } }] }],
+      })
+      .sort({ createdAt: -1 })
+      .lean()
+      .then((projects) =>
+        projects.map(({ _id, ...project }) => ({ ...project, id: _id.toString() })),
       );
   }
 
   async create(userId: string, input: CreateProjectDto) {
     const data = this.validate(input);
-    return this.projects.create({ ...data, userId, ...(input.pageId ? { pageId: input.pageId } : {}) });
+    return this.projects.create({
+      ...data,
+      userId,
+      ...(input.pageId ? { pageId: input.pageId } : {}),
+    });
   }
 
   async update(userId: string, id: string, input: UpdateProjectDto) {
@@ -93,9 +181,12 @@ export class ProjectsService {
       .slice(0, 30);
     const publishAt = input.publishAt ? new Date(input.publishAt) : undefined;
     const unpublishAt = input.unpublishAt ? new Date(input.unpublishAt) : undefined;
-    if (input.publishAt && Number.isNaN(publishAt?.getTime())) throw new BadRequestException('Invalid publish date.');
-    if (input.unpublishAt && Number.isNaN(unpublishAt?.getTime())) throw new BadRequestException('Invalid unpublish date.');
-    if (publishAt && unpublishAt && unpublishAt <= publishAt) throw new BadRequestException('Unpublish date must be after publish date.');
+    if (input.publishAt && Number.isNaN(publishAt?.getTime()))
+      throw new BadRequestException('Invalid publish date.');
+    if (input.unpublishAt && Number.isNaN(unpublishAt?.getTime()))
+      throw new BadRequestException('Invalid unpublish date.');
+    if (publishAt && unpublishAt && unpublishAt <= publishAt)
+      throw new BadRequestException('Unpublish date must be after publish date.');
     return {
       title: input.title.trim(),
       summary: input.summary.trim(),
@@ -113,7 +204,11 @@ export class ProjectsService {
     };
   }
 
-  private isCurrentlyPublished(project: { isPublished?: boolean; publishAt?: Date; unpublishAt?: Date }): boolean {
+  private isCurrentlyPublished(project: {
+    isPublished?: boolean;
+    publishAt?: Date;
+    unpublishAt?: Date;
+  }): boolean {
     const now = Date.now();
     if (!project.isPublished) return false;
     if (project.publishAt && new Date(project.publishAt).getTime() > now) return false;

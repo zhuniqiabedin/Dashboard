@@ -14,6 +14,10 @@ export type Company = {
   employeeIds: string[];
   projectIds: string[];
   jobIds: string[];
+  employees?: {
+    userId: string | { name?: string; email?: string };
+    role: 'owner' | 'admin' | 'recruiter' | 'member';
+  }[];
 };
 export type PageProject = {
   title: string;
@@ -23,7 +27,7 @@ export type PageProject = {
   startDate: string;
   pageId: string;
 };
-export type PageJob = { title: string; location: string; description: string; pageId: string };
+export type PageJob = { title: string; location: string; description: string; pageId: string; annualSalary?: number };
 @Injectable({ providedIn: 'root' })
 export class CompaniesService {
   readonly companies = signal<Company[]>([]);
@@ -55,17 +59,33 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not create company.'),
       });
   }
-  addEmployee(id: string, email: string): void {
+  addEmployee(id: string, email: string, role = 'member'): void {
     this.http
       .post(
         `${environment.apiUrl}/companies/${id}/employees`,
-        { email },
+        { email, role },
         { headers: this.headers() },
       )
       .subscribe({
         next: () => this.load(),
         error: (error) => this.error.set(error.error?.message || 'Could not add employee.'),
       });
+  }
+  updateEmployeeRole(id: string, employeeId: string, role: string): void {
+    this.http
+      .patch(
+        `${environment.apiUrl}/companies/${id}/employees/${employeeId}/role`,
+        { role },
+        { headers: this.headers() },
+      )
+      .subscribe(() => this.load());
+  }
+  removeEmployee(id: string, employeeId: string): void {
+    this.http
+      .delete(`${environment.apiUrl}/companies/${id}/employees/${employeeId}`, {
+        headers: this.headers(),
+      })
+      .subscribe(() => this.load());
   }
   createProject(input: PageProject): void {
     this.http.post(`${environment.apiUrl}/projects`, input, { headers: this.headers() }).subscribe({
@@ -77,16 +97,20 @@ export class CompaniesService {
     });
   }
   updateProject(id: string, input: Partial<PageProject>): void {
-    this.http.patch(`${environment.apiUrl}/projects/${id}`, input, { headers: this.headers() }).subscribe({
-      next: () => this.loadProjects(input.pageId ?? ''),
-      error: (error) => this.error.set(error.error?.message || 'Could not update project.'),
-    });
+    this.http
+      .patch(`${environment.apiUrl}/projects/${id}`, input, { headers: this.headers() })
+      .subscribe({
+        next: () => this.loadProjects(input.pageId ?? ''),
+        error: (error) => this.error.set(error.error?.message || 'Could not update project.'),
+      });
   }
   removeProject(id: string, pageId: string): void {
-    this.http.delete(`${environment.apiUrl}/projects/${id}`, { headers: this.headers() }).subscribe({
-      next: () => this.loadProjects(pageId),
-      error: (error) => this.error.set(error.error?.message || 'Could not delete project.'),
-    });
+    this.http
+      .delete(`${environment.apiUrl}/projects/${id}`, { headers: this.headers() })
+      .subscribe({
+        next: () => this.loadProjects(pageId),
+        error: (error) => this.error.set(error.error?.message || 'Could not delete project.'),
+      });
   }
   loadProjects(pageId: string): void {
     this.http

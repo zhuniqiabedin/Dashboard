@@ -13,7 +13,7 @@
       </div>
       @if (canCreateCompany) {
       <a
-        href="#create-company"
+        (click)="companyDialog = true"
         class="rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-medium text-white hover:bg-[#004182]"
         >＋ Create company</a
       >
@@ -24,29 +24,6 @@
     } @if (error()) {
     <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</p>
     }
-    <div
-      class="mb-7 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-[#e8f0ff] p-6 sm:p-8"
-    >
-      <div class="flex items-center gap-4">
-        <span
-          class="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-2xl text-[#2864dc]"
-          >⚑</span
-        >
-        <div>
-          <h2 class="text-xl font-semibold">Give your company a home.</h2>
-          <p class="mt-1 max-w-xl text-sm leading-6 text-stone-500">
-            Manage your community, share updates, publish jobs, and build something of your own.
-          </p>
-        </div>
-      </div>
-      @if (canCreateCompany) {
-      <a
-        href="#create-company"
-        class="rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1f53bb]"
-        >＋ Create new company</a
-      >
-      }
-    </div>
     <div class="mb-5 flex items-center justify-between border-b border-stone-200 pb-3">
       <div class="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#2864dc]">
         Pages you manage · {{ companies().length }}
@@ -103,65 +80,22 @@
       </article>
       }
     </div>
-    } @else {
-    <div class="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-10 text-center">
-      <span
-        class="mx-auto grid size-12 place-items-center rounded-2xl bg-[#e8f3ff] text-xl text-[#0a66c2]"
-        >♧</span
-      >
-      <h2 class="mt-4 font-semibold">Your company workspace starts here</h2>
-      <p class="mt-1 text-sm text-stone-500">
-        Create a company to manage your team, jobs, and projects.
-      </p>
-    </div>
-    } @if (canCreateCompany) {
-    <form
-      id="create-company"
-      class="mt-10 rounded-2xl border border-stone-200 bg-white p-6 sm:p-8"
-      (ngSubmit)="create()"
-    >
-      <div class="mb-5">
-        <h2 class="text-xl font-semibold">Create a company</h2>
-        <p class="mt-1 text-sm text-stone-500">You can create up to two companies.</p>
-      </div>
-      <div class="grid gap-4 md:grid-cols-2">
-        <input
-          class="profile-input"
-          [(ngModel)]="name"
-          name="name"
-          placeholder="Company name"
-          required
-        />
-        <input
-          class="profile-input"
-          [(ngModel)]="location"
-          name="location"
-          placeholder="Location"
-        />
-        <input class="profile-input" [(ngModel)]="website" name="website" placeholder="Website" />
-        <textarea
-          class="profile-input resize-y md:row-span-2"
-          [(ngModel)]="description"
-          name="description"
-          placeholder="What does the company do?"
-          rows="3"
-          required
-        ></textarea>
-      </div>
-      <button
-        [disabled]="saving()"
-        class="mt-5 rounded-xl bg-[#0a66c2] px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
-      >
-        {{ saving() ? 'Creating…' : 'Create company' }}
-      </button>
-    </form>
-    } @else {
+    } @else if (!canCreateCompany) {
     <p class="mt-8 rounded-xl bg-[#e8f3ff] p-4 text-sm text-[#0a66c2]">
       You have reached the maximum of 2 companies.
     </p>
     }
   </div>
 </section>
+@if (companyDialog) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" (click)="closeCompanyDialog()">
+  <form class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl sm:p-8" (ngSubmit)="create()" (click)="$event.stopPropagation()">
+    <div class="flex items-start justify-between gap-4"><div><h2 class="text-xl font-semibold">Create a company</h2><p class="mt-1 text-sm text-stone-500">Add the details for your new company page.</p></div><button type="button" class="grid size-9 place-items-center rounded-lg text-lg text-stone-400 hover:bg-stone-100" (click)="closeCompanyDialog()" aria-label="Close">×</button></div>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2"><div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium">Company name</label><input class="profile-input" [(ngModel)]="name" name="name" placeholder="Company name" required /></div><div><label class="mb-1.5 block text-sm font-medium">Location</label><input class="profile-input" [(ngModel)]="location" name="location" placeholder="City, country" /></div><div><label class="mb-1.5 block text-sm font-medium">Website</label><input class="profile-input" [(ngModel)]="website" name="website" placeholder="https://example.com" /></div><div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium">Description</label><textarea class="profile-input resize-y" [(ngModel)]="description" name="description" placeholder="What does the company do?" rows="4" required></textarea></div></div>
+    <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-xl px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100" (click)="closeCompanyDialog()">Cancel</button><button [disabled]="saving()" class="rounded-xl bg-[#2864dc] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{{ saving() ? 'Creating…' : 'Create company' }}</button></div>
+  </form>
+</div>
+}
 } @else if (selectedCompany; as company) {
 <div class="flex min-h-[calc(100vh-72px)] bg-[#f1f4f8]">
   <aside
@@ -193,12 +127,35 @@
       <button
         class="nav-item w-full"
         [class.nav-active]="selectedSection === item.key"
-        (click)="item.key === 'projects' ? openPageProjects() : selectedSection = $any(item.key)"
+        (click)="item.key === 'overview' ? openPageHome() : item.key === 'projects' ? openPageProjects() : item.key === 'jobs' ? openPageJobs() : item.key === 'settings' ? openPageSettings() : item.key === 'employees' ? openPageInbox() : selectedSection = $any(item.key)"
       >
         <span>{{ item.icon }}</span>{{ item.label }}
       </button>
       }
     </nav>
+    <div class="mt-6 border-t border-stone-200 pt-5">
+      <div class="mb-3 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">
+        EMPLOYEES
+      </div>
+      <div class="space-y-2 px-2">
+        @for (employee of (company.employees || []); track $index) {
+        <div class="flex items-center gap-2 rounded-lg px-2 py-1.5">
+          <span
+            class="grid size-7 shrink-0 place-items-center rounded-full bg-[#e8f3ff] text-[11px] font-semibold text-[#2864dc]"
+            >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
+          >
+          <span class="min-w-0 flex-1"
+            ><b class="block truncate text-xs text-stone-700">{{ creatorName(employee.userId) }}</b
+            ><small class="block text-[10px] text-stone-400 capitalize"
+              >{{ employee.role }}</small
+            ></span
+          >
+        </div>
+        } @empty {
+        <p class="px-2 text-xs text-stone-400">No employees yet.</p>
+        }
+      </div>
+    </div>
     <button
       class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2864dc] px-3 py-3 text-sm font-semibold text-white"
       (click)="openProjectDialog()"
@@ -462,9 +419,11 @@
           </article>
         </div>
       </section>
-      } @else if (selectedSection === 'projects') {
-        <app-projects-page [pageId]="company._id"></app-projects-page>
-      } @else if (selectedSection === 'jobs') {
+      } @else if (selectedSection === 'projects') { @if (selectedProjectId) {
+          <app-project-detail-page [projectId]="selectedProjectId" [pageId]="company._id"></app-project-detail-page>
+      } @else {
+      <app-projects-page [pageId]="company._id"></app-projects-page>
+      } } @else if (selectedSection === 'jobs') {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">
         <h1 class="text-2xl font-semibold">Jobs</h1>
         <p class="mt-1 text-sm text-stone-500">Publish jobs for {{ company.name }}.</p>
@@ -487,24 +446,107 @@
             name="jobDescription"
             placeholder="Job description"
             rows="3"
-          ></textarea
+          ></textarea><input class="profile-input" [(ngModel)]="jobAnnualSalary" name="jobAnnualSalary" type="number" min="0" placeholder="Annual salary (€)"
           ><button class="w-fit rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white">
             Create job
           </button>
         </form>
       </section>
       } @else if (selectedSection === 'employees') {
+      <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <h1 class="text-2xl font-semibold">Inbox</h1>
+        <p class="mt-1 text-sm text-stone-500">
+          People who contacted {{ company.name }} and people this page contacted.
+        </p>
+        <div class="mt-5 grid min-h-[480px] border-t border-stone-100 md:grid-cols-[290px_1fr]">
+          <aside class="border-r border-stone-100">
+            @for (conversation of companyConversations; track conversation._id) {<button
+              class="w-full border-b border-stone-100 p-4 text-left hover:bg-stone-50"
+              [class.bg-[#e8f3ff]]="selectedCompanyConversation?._id === conversation._id"
+              (click)="selectedCompanyConversation = conversation"
+            >
+              <b class="block truncate text-sm"
+                >{{ conversation.userId?.name || conversation.userId?.email ||
+                conversation.pageId?.name || 'Conversation' }}</b
+              ><span class="mt-1 block text-xs font-medium text-[#2864dc]"
+                >{{ conversation.projectId ? 'Project' : conversation.jobId ? 'Job' : 'General conversation' }}</span
+              ><span class="mt-1 block truncate text-xs text-stone-400"
+                >{{ conversation.messages?.[conversation.messages.length - 1]?.text || 'No messages yet' }}</span
+              ></button
+            >} @empty {
+            <p class="p-4 text-sm text-stone-500">No conversations yet.</p>
+            }
+          </aside>
+          <main class="flex min-w-0 flex-col">
+            <div class="border-b border-stone-100 p-5">
+              <h2 class="font-semibold">
+                {{ selectedCompanyConversation?.userId?.name ||
+                selectedCompanyConversation?.userId?.email || 'Select a conversation' }}
+              </h2>
+            </div>
+            <div class="flex-1 space-y-3 overflow-y-auto p-5">
+              @for (message of selectedCompanyConversation?.messages || []; track message._id) {
+              <div class="flex" [class.justify-end]="isOwnCompanyMessage(message)">
+              <div class="max-w-xl rounded-2xl p-3 text-sm" [class.bg-[#2864dc]]="isOwnCompanyMessage(message)" [class.text-white]="isOwnCompanyMessage(message)" [class.bg-stone-100]="!isOwnCompanyMessage(message)">
+                <div>{{ message.text }}</div>
+                <small class="mt-1 block" [class.text-blue-100]="isOwnCompanyMessage(message)" [class.text-stone-400]="!isOwnCompanyMessage(message)"
+                  >{{ message.createdAt | date:'medium' }}</small
+                >
+              </div>
+              </div>
+              }
+            </div>
+            @if (selectedCompanyConversation) {
+            <form class="flex gap-2 border-t border-stone-100 p-4" (ngSubmit)="sendCompanyMessage()">
+              <input class="flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm" [(ngModel)]="companyMessageText" name="companyMessage" placeholder="Write a message..." />
+              <button class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm font-medium text-white">Send</button>
+            </form>
+            }
+          </main>
+        </div>
+      </section>
+      } @else if (selectedSection === 'settings') {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">
-        <h1 class="text-2xl font-semibold">Employees</h1>
-        <p class="mt-1 text-sm text-stone-500">Invite an existing Career Space user by email.</p>
-        <div class="mt-5 flex max-w-2xl flex-wrap gap-2">
+        <h1 class="text-2xl font-semibold">Company settings</h1>
+        <p class="mt-1 text-sm text-stone-500">Manage employees and their roles.</p>
+        <div class="mt-5 space-y-3">
+          @for (employee of (company.employees || []); track $index) {
+          <div class="flex items-center gap-3 rounded-xl border border-stone-100 p-3">
+            <span
+              class="flex size-9 items-center justify-center rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#2864dc]"
+              >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
+            ><b class="min-w-0 flex-1 truncate text-sm">{{ creatorName(employee.userId) }}</b
+            ><select
+              class="rounded-lg border border-stone-200 px-2 py-2 text-xs"
+              [ngModel]="employee.role"
+              (ngModelChange)="updateEmployeeRole(company._id, employeeId(employee.userId), $event)"
+            >
+              <option value="owner">Owner</option>
+              <option value="admin">Admin</option>
+              <option value="recruiter">Recruiter</option>
+              <option value="member">Member</option></select
+            ><button
+              class="text-xs text-red-600"
+              (click)="removeEmployee(company._id, employeeId(employee.userId))"
+            >
+              Delete
+            </button>
+          </div>
+          } @empty {
+          <p class="text-sm text-stone-500">No employees.</p>
+          }
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2">
           <input
-            class="profile-input min-w-[220px] flex-1"
+            class="profile-input flex-1"
             [(ngModel)]="employeeEmail"
-            name="employeeEmail"
             placeholder="Employee email"
-          /><button
-            class="rounded-xl bg-[#2864dc] px-5 text-sm text-white"
+          /><select class="profile-input w-auto" [(ngModel)]="employeeRole">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+            <option value="recruiter">Recruiter</option></select
+          ><button
+            class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm text-white"
             (click)="selected = company._id; addEmployee()"
           >
             Add employee

@@ -18,6 +18,7 @@ export type Project = {
   startDate: string;
   endDate?: string;
   skills: string[];
+  hourlyRate?: number;
   isPublished?: boolean;
   publishAt?: string;
   unpublishAt?: string;
@@ -28,6 +29,8 @@ type ProjectsResponse = ApiProject[] | { projects?: ApiProject[]; data?: ApiProj
 @Injectable({ providedIn: 'root' })
 export class ProjectsService {
   readonly projects = signal<Project[]>([]);
+  readonly publishedProjects = signal<Project[]>([]);
+  readonly matchingUsers = signal<any[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
   readonly saving = signal(false);
@@ -72,6 +75,31 @@ export class ProjectsService {
         },
       });
   }
+  loadPublished(): void {
+    this.http
+      .get<ApiProject[]>(`${environment.apiUrl}/projects/discover`, { headers: this.headers() })
+      .subscribe({
+        next: (projects) =>
+          this.publishedProjects.set(
+            projects.map(
+              (project) =>
+                ({
+                  ...project,
+                  id: project.id ?? project._id ?? crypto.randomUUID(),
+                  skills: project.skills ?? [],
+                  isPublished: true,
+                }) as Project,
+            ),
+          ),
+      });
+  }
+  loadMatchingUsers(projectId: string): void {
+    this.http
+      .get<any[]>(`${environment.apiUrl}/projects/${projectId}/matching-users`, {
+        headers: this.headers(),
+      })
+      .subscribe({ next: (users) => this.matchingUsers.set(users) });
+  }
 
   create(project: Omit<Project, 'id'>): void {
     this.saving.set(true);
@@ -86,14 +114,25 @@ export class ProjectsService {
   }
   update(id: string, project: Omit<Project, 'id'>): void {
     this.saving.set(true);
-    this.http.patch(`${environment.apiUrl}/projects/${id}`, project, { headers: this.headers() }).pipe(finalize(() => this.saving.set(false))).subscribe({ next: () => this.load(), error: (error) => this.error.set(error.error?.message || 'Your project could not be updated.') });
+    this.http
+      .patch(`${environment.apiUrl}/projects/${id}`, project, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => this.load(),
+        error: (error) =>
+          this.error.set(error.error?.message || 'Your project could not be updated.'),
+      });
   }
   remove(id: string): void {
     this.saving.set(true);
-    this.http.delete(`${environment.apiUrl}/projects/${id}`, { headers: this.headers() }).pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: () => this.load(),
-      error: (error) => this.error.set(error.error?.message || 'Your project could not be deleted.'),
-    });
+    this.http
+      .delete(`${environment.apiUrl}/projects/${id}`, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => this.load(),
+        error: (error) =>
+          this.error.set(error.error?.message || 'Your project could not be deleted.'),
+      });
   }
 
   private headers(): HttpHeaders {

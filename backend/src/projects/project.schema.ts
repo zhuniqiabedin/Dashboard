@@ -22,6 +22,7 @@ export class Project {
   @Prop({ required: true, type: Date }) startDate!: Date;
   @Prop({ type: Date }) endDate?: Date;
   @Prop({ type: [String], default: [] }) skills!: string[];
+  @Prop({ min: 0, default: 0 }) hourlyRate!: number;
   @Prop({ default: false, index: true }) isPublished!: boolean;
   @Prop({ type: Date }) publishAt?: Date;
   @Prop({ type: Date }) unpublishAt?: Date;

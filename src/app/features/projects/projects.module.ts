@@ -10,7 +10,10 @@ import { ProjectDetailPage } from './project-detail.page';
     CommonModule,
     FormsModule,
     ProjectsPage,
-    RouterModule.forChild([{ path: '', component: ProjectsPage }, { path: ':id', component: ProjectDetailPage }]),
+    RouterModule.forChild([
+      { path: '', component: ProjectsPage },
+      { path: ':id', component: ProjectDetailPage },
+    ]),
   ],
 })
 export class ProjectsModule {}

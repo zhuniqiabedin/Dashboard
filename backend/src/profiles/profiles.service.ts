@@ -15,8 +15,10 @@ export class ProfilesService {
 
   async getMine(userId: string) {
     const profile = await this.profiles.findOne({ userId }).lean();
-    if (!profile) throw new NotFoundException('Profile not found.');
-    return profile;
+    if (profile) return profile;
+    const user = await this.users.findById(userId).select('name email').lean();
+    if (!user) throw new NotFoundException('User not found.');
+    return this.profiles.create({ userId, name: user.name, email: user.email, skills: '' });
   }
 
   async updateMine(userId: string, input: UpdateProfileDto) {

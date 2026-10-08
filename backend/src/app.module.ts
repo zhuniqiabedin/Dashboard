@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { CompaniesModule } from './companies/companies.module';
 import { AppController } from './app.controller';
 import { JobsModule } from './jobs/jobs.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { JobsModule } from './jobs/jobs.module';
     ProjectsModule,
     CompaniesModule,
     JobsModule,
+    MessagesModule,
   ],
   controllers: [AppController],
 })

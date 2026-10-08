@@ -1,17 +1,49 @@
-import { Component } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
 import { CvEducation, CvCertificate, CvProject, CvService } from '../../core/cv.service';
+import { AuthService } from '../../core/auth.service';
+import { environment } from '../../../environments/environment';
+type CvProfile = {
+  name: string;
+  email: string;
+  headline: string;
+  location: string;
+  about: string;
+  website: string;
+  experience: string;
+  photo: string;
+};
 @Component({ selector: 'app-cv-page', standalone: false, templateUrl: './cv.page.html' })
-export class CvPage {
+export class CvPage implements OnInit {
   readonly cv;
   notice = '';
+  editing = false;
+  profile: CvProfile = {
+    name: 'Your Name', email: '', headline: '', location: '', about: '', website: '', experience: '', photo: '',
+  };
   newProject: CvProject = { title: '', description: '', link: '' };
   newEducation: CvEducation = { school: '', degree: '', period: '' };
   newCertificate: CvCertificate = { name: '', issuer: '', year: '' };
-  constructor(private readonly service: CvService) {
+  constructor(
+    private readonly service: CvService,
+    private readonly http: HttpClient,
+    private readonly auth: AuthService,
+  ) {
     this.cv = service.cv;
   }
+  ngOnInit(): void {
+    const user = this.auth.readUser();
+    this.profile.name = user?.name || this.profile.name;
+    this.profile.email = user?.email || '';
+    this.http.get<Partial<CvProfile>>(`${environment.apiUrl}/profiles/me`, { headers: this.headers() })
+      .subscribe({ next: (profile) => this.profile = { ...this.profile, ...profile } });
+  }
+  get initials(): string {
+    return this.profile.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+  }
   update(partial: object): void {
-    this.service.cv.update((value) => ({ ...value, ...partial }));
+    const next = { ...this.cv(), ...partial };
+    this.service.save(next);
   }
   addProject(): void {
     if (!this.newProject.title.trim()) return;
@@ -39,6 +71,23 @@ export class CvPage {
   }
   save(): void {
     this.service.save(this.cv());
-    this.notice = 'Your CV has been saved.';
+    this.editing = false;
+    this.http.patch<Partial<CvProfile>>(
+      `${environment.apiUrl}/profiles/me`,
+      { experience: this.profile.experience, headline: this.profile.headline },
+      { headers: this.headers() },
+    ).subscribe({
+      next: (profile) => {
+        this.profile = { ...this.profile, ...profile };
+        this.notice = 'Your CV has been saved.';
+      },
+      error: () => {
+        this.notice = 'Your CV is saved locally. Your experience will sync when the API is available.';
+      },
+    });
+  }
+  downloadResume(): void { window.print(); }
+  private headers(): HttpHeaders {
+    return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }
 }

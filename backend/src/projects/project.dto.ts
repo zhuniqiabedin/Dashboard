@@ -12,6 +12,7 @@ export class CreateProjectDto {
   startDate!: string;
   endDate?: string;
   skills?: string[];
+  hourlyRate?: number;
   isPublished?: boolean;
   publishAt?: string;
   unpublishAt?: string;

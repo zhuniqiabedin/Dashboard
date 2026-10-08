@@ -21,6 +21,16 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/discover/discover.module').then((m) => m.DiscoverModule),
       },
+      {
+        path: 'discover_users/:projectId',
+        loadChildren: () =>
+          import('./features/discover/discover.module').then((m) => m.DiscoverModule),
+      },
+      {
+        path: 'messages',
+        loadChildren: () =>
+          import('./features/messages/messages.module').then((m) => m.MessagesModule),
+      },
       { path: 'discover', pathMatch: 'full', redirectTo: 'discover_projects' },
       {
         path: 'profile',

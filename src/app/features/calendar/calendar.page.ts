@@ -7,10 +7,11 @@ import { Component } from '@angular/core';
 export class CalendarPage {
   notice = '';
   offset = 0;
-  selected = 23;
+  readonly today = new Date();
+  selected = this.today.getDate();
   weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   get date(): Date {
-    return new Date(2026, 8 + this.offset, 1);
+    return new Date(this.today.getFullYear(), this.today.getMonth() + this.offset, 1);
   }
   get monthTitle(): string {
     return new Intl.DateTimeFormat('en', {
@@ -30,6 +31,13 @@ export class CalendarPage {
   }
   shift(value: number): void {
     this.offset += value;
-    this.selected = 1;
+    this.selected = Math.min(this.today.getDate(), this.monthLength);
+  }
+  goToday(): void {
+    this.offset = 0;
+    this.selected = this.today.getDate();
+  }
+  isToday(day: number): boolean {
+    return this.offset === 0 && day === this.today.getDate();
   }
 }
