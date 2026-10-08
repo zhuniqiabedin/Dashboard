@@ -37,4 +37,10 @@ user. The Angular My projects page uses these protected endpoints:
 - `PATCH /projects/:id` updates a project.
 - `DELETE /projects/:id` deletes a project.
 
+Calendar events are stored in MongoDB and belong to the signed-in user:
+
+- `GET /calendar/events` loads the user's events.
+- `POST /calendar/events` creates an event with `title`, `startsAt` (ISO date-time), and an optional `description`.
+- `DELETE /calendar/events/:id` deletes one of the user's events.
+
 From the repository root, use `npm run backend:start` to start the API in watch mode or `npm run backend:build` to build it.

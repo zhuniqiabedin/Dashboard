@@ -8,19 +8,91 @@
       <p class="mt-2 text-sm text-stone-500">Make time for the things that move you forward.</p>
     </div>
     <button
+      type="button"
       class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
-      (click)="notice = 'New event form coming soon.'"
+      (click)="openEventForm()"
     >
       ＋ &nbsp; Add event
     </button>
   </div>
+
   @if (notice) {
-  <p class="mt-4 text-sm text-[#0a66c2]">{{ notice }}</p>
+  <p class="mt-4 text-sm text-[#0a66c2]" role="status">{{ notice }}</p>
+  } @if (error) {
+  <p class="mt-4 text-sm text-rose-600" role="alert">{{ error }}</p>
+  } @if (showEventForm) {
+  <form class="mt-5 rounded-2xl border border-stone-200/80 bg-white p-5" (ngSubmit)="saveEvent()">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold">Add an event</h2>
+      <button
+        type="button"
+        class="text-sm text-stone-500 hover:text-stone-800"
+        (click)="showEventForm = false"
+      >
+        Cancel
+      </button>
+    </div>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <label class="text-sm font-medium text-stone-700 sm:col-span-2">
+        Event name
+        <input
+          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+          name="title"
+          [(ngModel)]="newEvent.title"
+          maxlength="120"
+          required
+          placeholder="e.g. Portfolio review"
+        />
+      </label>
+      <label class="text-sm font-medium text-stone-700">
+        Date
+        <input
+          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+          type="date"
+          name="date"
+          [(ngModel)]="newEvent.date"
+          [min]="minDate"
+          required
+        />
+      </label>
+      <label class="text-sm font-medium text-stone-700">
+        Start time
+        <input
+          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+          type="time"
+          name="time"
+          [(ngModel)]="newEvent.time"
+          [min]="minTime"
+          required
+        />
+      </label>
+      <label class="text-sm font-medium text-stone-700 sm:col-span-2">
+        Notes (optional)
+        <textarea
+          class="mt-1.5 min-h-20 w-full resize-y rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+          name="description"
+          [(ngModel)]="newEvent.description"
+          maxlength="2000"
+          placeholder="Add a few details"
+        ></textarea>
+      </label>
+    </div>
+    <button
+      class="mt-4 rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182] disabled:opacity-60"
+      type="submit"
+      [disabled]="saving"
+    >
+      {{ saving ? 'Saving…' : 'Save event' }}
+    </button>
+  </form>
   }
+
   <div class="mt-7 grid gap-5 lg:grid-cols-[1.7fr_1fr]">
     <section class="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-6">
       <div class="mb-5 flex items-center gap-3">
         <button
+          type="button"
+          aria-label="Previous month"
           class="grid size-8 place-items-center rounded-lg border border-stone-200 hover:bg-stone-50"
           (click)="shift(-1)"
         >
@@ -28,11 +100,15 @@
         </button>
         <h2 class="min-w-40 text-center text-lg font-semibold">{{ monthTitle }}</h2>
         <button
+          type="button"
+          aria-label="Next month"
           class="grid size-8 place-items-center rounded-lg border border-stone-200 hover:bg-stone-50"
           (click)="shift(1)"
         >
-          ›</button
-        ><button
+          ›
+        </button>
+        <button
+          type="button"
           class="ml-auto rounded-lg border border-stone-200 px-3 py-2 text-xs hover:bg-stone-50"
           (click)="goToday()"
         >
@@ -46,48 +122,61 @@
         </div>
         } @for (day of days; track $index) {
         <button
+          type="button"
           class="relative flex min-h-16 flex-col items-center border-t border-stone-100 py-2 text-sm hover:bg-[#f3f8fc] sm:min-h-20"
           [class.text-stone-300]="day < 1 || day > monthLength"
-          [class.font-semibold]="isToday(day)"
-          [class.bg-[#e8f3ff]]="isToday(day)"
-          [class.text-[#0a66c2]]="isToday(day)"
-          (click)="selected = day"
+          [class.font-semibold]="isToday(day) || isSelected(day)"
+          [class.bg-[#e8f3ff]]="isToday(day) || isSelected(day)"
+          [class.text-[#0a66c2]]="isToday(day) || isSelected(day)"
+          [class.cursor-not-allowed]="isPast(day)"
+          [class.opacity-40]="isPast(day)"
+          [disabled]="isPast(day)"
+          [attr.aria-label]="(day < 1 ? prevLength + day : day > monthLength ? day - monthLength : day) + ' ' + monthTitle"
+          [attr.aria-pressed]="isSelected(day)"
+          (click)="selectDay(day)"
         >
-          {{ day < 1 ? prevLength + day : day > monthLength ? day - monthLength : day }} @if (day
-          && isToday(day)) {
-          <i class="mt-1 size-1.5 rounded-full bg-[#0a66c2]"></i>
-          } @if (day === 25 || day === 29) {
+          {{ day < 1 ? prevLength + day : day > monthLength ? day - monthLength : day }} @if
+          (hasEvents(day)) {
           <i class="mt-1 size-1.5 rounded-full bg-[#a78bb6]"></i>
           }
         </button>
         }
       </div>
     </section>
+
     <section class="rounded-2xl border border-stone-200/80 bg-white p-5">
       <div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR AGENDA</div>
-      <h2 class="mt-1 text-lg font-semibold">
-        {{ isToday(selected) ? "Today" : "Selected day, " + selected }}
-      </h2>
+      <h2 class="mt-1 text-lg font-semibold">{{ selectedDate | date: 'EEEE, MMMM d' }}</h2>
+      @if (loading) {
+      <p class="mt-6 text-sm text-stone-500">Loading your events…</p>
+      } @else if (selectedEvents.length) {
       <div class="mt-6 space-y-5">
-        <div class="flex gap-3">
-          <time class="w-12 text-right text-xs font-medium"
-            >2:30<small class="ml-1 text-stone-400">PM</small></time
-          ><i class="h-12 w-0.5 rounded-full bg-[#8bab9b]"></i>
-          <div>
-            <b class="text-sm">Portfolio review</b>
-            <p class="mt-1 text-xs text-stone-400">Personal project · 45 min</p>
+        @for (event of selectedEvents; track event.id) {
+        <article class="flex gap-3">
+          <time class="w-14 shrink-0 pt-0.5 text-right text-xs font-medium">
+            {{ formatTime(event.startsAt) }}
+          </time>
+          <i class="w-0.5 shrink-0 self-stretch rounded-full bg-[#8bab9b]"></i>
+          <div class="min-w-0 flex-1">
+            <b class="text-sm">{{ event.title }}</b>
+            @if (event.description) {
+            <p class="mt-1 text-xs whitespace-pre-line text-stone-500">{{ event.description }}</p>
+            }
           </div>
-        </div>
-        <div class="flex gap-3">
-          <time class="w-12 text-right text-xs font-medium"
-            >4:00<small class="ml-1 text-stone-400">PM</small></time
-          ><i class="h-12 w-0.5 rounded-full bg-[#b39bc0]"></i>
-          <div>
-            <b class="text-sm">Walk &amp; reset</b>
-            <p class="mt-1 text-xs text-stone-400">Make a little space · 30 min</p>
-          </div>
-        </div>
+          <button
+            type="button"
+            class="shrink-0 text-xs text-rose-600 hover:underline"
+            [attr.aria-label]="'Delete ' + event.title"
+            (click)="removeEvent(event)"
+          >
+            Delete
+          </button>
+        </article>
+        }
       </div>
+      } @else {
+      <p class="mt-6 text-sm text-stone-500">No events planned for this day.</p>
+      }
       <p class="mt-8 border-t border-stone-100 pt-4 text-xs text-[#0a66c2]">
         ✳ &nbsp; Leave a little breathing room between the big things.
       </p>

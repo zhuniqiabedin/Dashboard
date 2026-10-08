@@ -18,10 +18,12 @@ export class CvPage implements OnInit {
   readonly cv;
   notice = '';
   editing = false;
+  editingProjectIndex: number | null = null;
+  projectDraft: CvProject | null = null;
   profile: CvProfile = {
     name: 'Your Name', email: '', headline: '', location: '', about: '', website: '', experience: '', photo: '',
   };
-  newProject: CvProject = { title: '', description: '', link: '' };
+  newProject: CvProject = { title: '', description: '', link: '', skills: [] };
   newEducation: CvEducation = { school: '', degree: '', period: '' };
   newCertificate: CvCertificate = { name: '', issuer: '', year: '' };
   constructor(
@@ -48,10 +50,33 @@ export class CvPage implements OnInit {
   addProject(): void {
     if (!this.newProject.title.trim()) return;
     this.update({ projects: [...this.cv().projects, { ...this.newProject }] });
-    this.newProject = { title: '', description: '', link: '' };
+    this.newProject = { title: '', description: '', link: '', skills: [] };
+  }
+  editProject(index: number): void {
+    const project = this.cv().projects[index];
+    if (!project) return;
+    this.editingProjectIndex = index;
+    this.projectDraft = { ...project, skills: [...(project.skills ?? [])] };
+  }
+  setProjectDraftSkills(skills: string[]): void {
+    if (this.projectDraft) this.projectDraft = { ...this.projectDraft, skills };
+  }
+  saveProject(index: number): void {
+    const draft = this.projectDraft;
+    if (!draft?.title.trim() || this.editingProjectIndex !== index) return;
+    const projects = this.cv().projects.map((project, projectIndex) =>
+      projectIndex === index ? draft : project,
+    );
+    this.update({ projects });
+    this.cancelProjectEdit();
+  }
+  cancelProjectEdit(): void {
+    this.editingProjectIndex = null;
+    this.projectDraft = null;
   }
   removeProject(i: number): void {
     this.update({ projects: this.cv().projects.filter((_, index) => index !== i) });
+    this.cancelProjectEdit();
   }
   addEducation(): void {
     if (!this.newEducation.school.trim() || !this.newEducation.degree.trim()) return;

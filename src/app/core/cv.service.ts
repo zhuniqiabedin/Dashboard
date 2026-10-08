@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
-export type CvProject = { title: string; description: string; link: string };
+export type CvProject = { title: string; description: string; link: string; skills?: string[] };
 export type CvEducation = { school: string; degree: string; period: string };
 export type CvCertificate = { name: string; issuer: string; year: string };
 export type CvData = {
