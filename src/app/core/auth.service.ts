@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
 
 export type AuthUser = { id: string; name: string; email: string; photo?: string };
 export type AuthResponse = { accessToken: string; user: AuthUser };
@@ -11,6 +11,9 @@ const TOKEN_KEY = 'career-space-token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly sessionExpiredSubject = new Subject<void>();
+  readonly sessionExpired$ = this.sessionExpiredSubject.asObservable();
+
   constructor(private readonly http: HttpClient) {}
 
   login(email: string, password: string): Observable<AuthResponse> {
@@ -43,8 +46,13 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+
+  expireSession(): void {
+    this.logout();
+    this.sessionExpiredSubject.next();
   }
 
   private saveSession(response: AuthResponse): void {

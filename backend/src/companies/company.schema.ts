@@ -2,13 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
 export type CompanyDocument = HydratedDocument<Company>;
-export type CompanyRole = 'owner' | 'admin' | 'recruiter' | 'member';
+export type CompanyRole = 'owner' | 'admin' | 'recruiter' | 'hr' | 'member';
 
 @Schema({ _id: false })
 export class CompanyEmployee {
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' }) userId!: Types.ObjectId;
-  @Prop({ type: String, enum: ['owner', 'admin', 'recruiter', 'member'], default: 'member' })
-  role!: CompanyRole;
+  @Prop({ type: String, enum: ['owner', 'admin', 'recruiter', 'hr', 'member'], default: 'member' }) role?: CompanyRole;
+  @Prop({ type: [String], enum: ['owner', 'admin', 'recruiter', 'hr', 'member'], default: undefined }) roles?: CompanyRole[];
 }
 export const CompanyEmployeeSchema = SchemaFactory.createForClass(CompanyEmployee);
 
@@ -26,7 +26,11 @@ export class Company {
   @Prop({ type: [CompanyEmployeeSchema], default: [] }) employees!: CompanyEmployee[];
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Project' }], default: [] })
   projectIds!: Types.ObjectId[];
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'Job' }], default: [] }) jobIds!: Types.ObjectId[];
+  // Company jobs are stored as job IDs so pages can load their full records from this list.
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Project' }], default: [] })
+  projects!: Types.ObjectId[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Job' }], default: [] })
+  jobs!: Types.ObjectId[];
 }
 
 export const CompanySchema = SchemaFactory.createForClass(Company);

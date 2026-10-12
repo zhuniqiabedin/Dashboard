@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-messages-page',
   standalone: false,
+  host: { class: 'block h-full min-h-0' },
   templateUrl: './messages.page.html',
 })
 export class MessagesPage {
@@ -14,17 +15,106 @@ export class MessagesPage {
   selected: any = null;
   text = '';
   error = '';
+  query = '';
+  filter = 'all';
+  activeStatus = true;
   private readonly socketSubscription: Subscription;
   constructor(
     private readonly http: HttpClient,
     private readonly auth: AuthService,
     private readonly changeDetector: ChangeDetectorRef,
-    socket: MessagesSocketService,
+    private readonly socket: MessagesSocketService,
   ) {
     this.load();
     this.socketSubscription = socket.updates().subscribe(() => this.load());
+    socket.presence().subscribe((event) => {
+      for (const item of this.conversations) {
+        if (event.companyId && String(item.pageId?._id ?? item.pageId) === String(event.companyId))
+          item.pageOnline = event.online;
+        if (
+          event.userId &&
+          String(item.userId?._id ?? item.userId) === String(event.userId) &&
+          item.userId &&
+          typeof item.userId === 'object'
+        ) {
+          item.userId.isOnline = event.online && event.active !== false;
+          item.userId.activeStatus = event.active !== false;
+          if (event.lastSeen) item.userId.lastSeen = event.lastSeen;
+        }
+      }
+      this.changeDetector.detectChanges();
+    });
   }
-  ngOnDestroy(): void { this.socketSubscription.unsubscribe(); }
+  get filteredConversations(): any[] {
+    return this.conversations.filter((conversation) => {
+      const last = conversation.messages?.at(-1);
+      const unread = (conversation.messages || []).some(
+        (message: any) => !this.isOwnMessage(message) && !message.readAt,
+      );
+      return (
+        (this.filter !== 'unread' || unread) &&
+        this.conversationTitle(conversation).toLowerCase().includes(this.query.toLowerCase())
+      );
+    });
+  }
+  unreadCount(conversation: any): number {
+    return (conversation.messages || []).filter(
+      (message: any) => !this.isOwnMessage(message) && !message.readAt,
+    ).length;
+  }
+  setActiveStatus(active: boolean) {
+    this.http
+      .patch(`${environment.apiUrl}/messages/presence`, { active }, { headers: this.headers() })
+      .subscribe(() => {
+        this.activeStatus = active;
+      });
+  }
+  chooseFile(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !this.selected) return;
+    if (
+      file.size > 10 * 1024 * 1024 ||
+      !(file.type.startsWith('image/') || file.type === 'application/pdf')
+    ) {
+      this.error = 'Choose an image or PDF up to 10 MB.';
+      return;
+    }
+    const page = this.selected.pageId?._id ?? this.selected.pageId;
+    const project = this.selected.projectId?._id ?? this.selected.projectId ?? 'none';
+    const data = new FormData();
+    data.append('file', file);
+    this.http
+      .post(`${environment.apiUrl}/messages/${page}/${project}/attachment`, data, {
+        headers: this.headers(),
+      })
+      .subscribe({
+        next: () => this.load(),
+        error: (e) => {
+          this.error = e.error?.message || 'Attachment upload failed.';
+        },
+      });
+    (event.target as HTMLInputElement).value = '';
+  }
+  download(message: any) {
+    const id = message.attachment?.fileId;
+    if (!id) return;
+    this.http
+      .get(`${environment.apiUrl}/messages/attachment/${id}`, {
+        headers: this.headers(),
+        responseType: 'blob',
+      })
+      .subscribe((blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = message.attachment.filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      });
+  }
+  ngOnDestroy(): void {
+    this.socketSubscription.unsubscribe();
+  }
   private headers() {
     return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }
@@ -53,9 +143,11 @@ export class MessagesPage {
       )
       .subscribe({
         next: (updated) => {
-          this.selected = updated;
+          // Keep populated participant/page data from the inbox row while replacing
+          // the message list with the read response.
+          this.selected = { ...conversation, ...updated };
           const index = this.conversations.findIndex((item) => item._id === conversation._id);
-          if (index >= 0) this.conversations[index] = updated;
+          if (index >= 0) this.conversations[index] = { ...conversation, ...updated };
         },
       });
   }
@@ -68,8 +160,28 @@ export class MessagesPage {
     return !!currentId && String(currentId) === String(senderId);
   }
   participantOnline(conversation: any): boolean {
-    const lastSeen = conversation?.userId?.lastSeen;
-    return !!lastSeen && Date.now() - new Date(lastSeen).getTime() < 5 * 60 * 1000;
+    const currentId = this.auth.readUser()?.id;
+    const conversationUserId = conversation?.userId?._id ?? conversation?.userId;
+    if (currentId && String(currentId) === String(conversationUserId))
+      return conversation?.pageOnline === true;
+    return conversation?.userId?.activeStatus !== false && conversation?.userId?.isOnline === true;
+  }
+  participantStatus(conversation: any): string {
+    const currentId = this.auth.readUser()?.id;
+    const conversationUserId = conversation?.userId?._id ?? conversation?.userId;
+    if (currentId && String(currentId) === String(conversationUserId)) {
+      return conversation?.pageOnline ? 'Online' : 'Offline';
+    }
+    const user = conversation?.userId;
+    if (user?.activeStatus === false) return 'Offline';
+    if (user?.isOnline === true) return 'Online';
+    return user?.lastSeen ? `Last seen ${this.lastSeenDate(user.lastSeen)}` : 'Offline';
+  }
+  lastSeenDate(value: string | Date): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? 'a while ago'
+      : date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
   }
   load() {
     this.http

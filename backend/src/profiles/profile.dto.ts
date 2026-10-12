@@ -3,6 +3,7 @@ import { Branches } from '../branches.enum';
 export class UpdateProfileDto {
   name?: string;
   headline?: string;
+  phone?: string;
   location?: string;
   branch?: Branches;
   about?: string;

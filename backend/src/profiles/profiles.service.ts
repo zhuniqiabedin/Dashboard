@@ -27,6 +27,7 @@ export class ProfilesService {
     const allowed = [
       'name',
       'headline',
+      'phone',
       'location',
       'branch',
       'about',
@@ -40,7 +41,7 @@ export class ProfilesService {
     for (const key of allowed) {
       const value = (input as Record<string, unknown>)[key];
       if (value === undefined) continue;
-      if (typeof value !== 'string' || value.length > (key === 'photo' ? 2_100_000 : 3000)) {
+      if (typeof value !== 'string' || value.length > (key === 'photo' ? 2_100_000 : key === 'phone' ? 40 : 3000)) {
         throw new BadRequestException(`Invalid ${key} value.`);
       }
       update[key] = value;

@@ -9,6 +9,7 @@ import { AppController } from './app.controller';
 import { JobsModule } from './jobs/jobs.module';
 import { MessagesModule } from './messages/messages.module';
 import { CalendarEventsModule } from './calendar-events/calendar-events.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -16,9 +17,16 @@ import { CalendarEventsModule } from './calendar-events/calendar-events.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGODB_URI') ?? 'mongodb://127.0.0.1:27017/career-space',
-      }),
+      useFactory: (config: ConfigService) => {
+        const uri =
+          config.get<string>('MONGODB_URI') ?? 'mongodb://127.0.0.1:27017/career-space';
+        return {
+          uri,
+          // Atlas database users are authenticated through the admin database even
+          // when the application uses a named database such as career-space.
+          ...(uri.startsWith('mongodb+srv://') ? { authSource: 'admin' } : {}),
+        };
+      },
     }),
     AuthModule,
     ProfilesModule,
@@ -27,6 +35,7 @@ import { CalendarEventsModule } from './calendar-events/calendar-events.module';
     JobsModule,
     MessagesModule,
     CalendarEventsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })

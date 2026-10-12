@@ -15,6 +15,8 @@ export class User {
   passwordHash!: string;
   @Prop({ type: Date, default: Date.now })
   lastSeen!: Date;
+  @Prop({ type: Boolean, default: true }) activeStatus!: boolean;
+  @Prop({ type: Boolean, default: false }) isOnline!: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

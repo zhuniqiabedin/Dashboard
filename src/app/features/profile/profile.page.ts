@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth.service';
 type Profile = {
   name: string;
   email: string;
+  phone: string;
   headline: string;
   location: string;
   branch: Branches;
@@ -126,6 +127,7 @@ export class ProfilePage implements OnInit {
     const defaultProfile: Profile = {
       name: 'Your Name',
       email: '',
+      phone: '',
       headline: '',
       location: '',
       branch: Branches.Other,

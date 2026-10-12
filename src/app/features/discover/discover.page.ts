@@ -6,10 +6,12 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
+import { timeout } from 'rxjs';
 
 type FeedType = 'All' | 'Projects' | 'Jobs';
 type Post = {
-  id: number;
+  pageId?: string;
+  id: number | string;
   type: 'Project' | 'Job';
   category: string;
   branch: Branches;
@@ -25,6 +27,8 @@ type Post = {
   likes: number;
   comments: number;
   callToAction: string;
+  match?: number;
+  matchedSkills?: string[];
 };
 
 @Component({
@@ -39,6 +43,14 @@ export class DiscoverPage {
   selectedBranch = 'All';
   matchMySkills = false;
   projectId = '';
+  employeePageId = '';
+  employeeId = '';
+  employeeName = 'Company employee';
+  employeeProjects: Post[] = [];
+  employeeProjectsLoading = false;
+  employeeProjectsError = '';
+  applyingProjectId = '';
+  appliedProjectIds = new Set<string>();
   contactUser: any = null;
   messageText = '';
   messageNotice = '';
@@ -51,9 +63,100 @@ export class DiscoverPage {
     route: ActivatedRoute,
   ) {
     this.projectId = route.snapshot.paramMap.get('projectId') ?? '';
-    this.projectId
-      ? this.projectsService.loadMatchingUsers(this.projectId)
-      : this.projectsService.loadPublished();
+    this.employeePageId = route.snapshot.paramMap.get('pageId') ?? '';
+    this.employeeId = route.snapshot.paramMap.get('employeeId') ?? '';
+    if (this.employeePageId && this.employeeId) {
+      // Populate the regular published feed immediately. The employee-specific
+      // request adds ranking, but should not keep the page blank while it runs.
+      this.projectsService.loadPublished();
+      this.loadEmployeeProjects();
+    } else
+      this.projectId
+        ? this.projectsService.loadMatchingUsers(this.projectId)
+        : this.projectsService.loadPublished();
+  }
+  get employeeMode(): boolean {
+    return !!(this.employeePageId && this.employeeId);
+  }
+  private loadEmployeeProjects(): void {
+    this.employeeProjectsLoading = true;
+    this.employeeProjectsError = '';
+    this.http
+      .get<any[]>(`${environment.apiUrl}/projects/matching-for-employee`, {
+        headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+        params: { pageId: this.employeePageId, employeeId: this.employeeId },
+      })
+      .pipe(timeout(12000))
+      .subscribe({
+        next: (items) => {
+          this.employeeProjects = (items ?? []).map((item) => ({
+            id: item.id,
+            pageId: item.pageId,
+            type: 'Project',
+            category: item.category,
+            branch: item.branch,
+            author: item.pageName || 'Company',
+            authorInitials: (item.pageName || 'Company').slice(0, 2).toUpperCase(),
+            avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
+            headline: `${item.match ?? 0}% skill match`,
+            posted: 'Recently',
+            title: item.title,
+            summary: item.summary,
+            details: item.details || item.summary,
+            tags: item.skills ?? [],
+            likes: 0,
+            comments: 0,
+            callToAction: 'Apply as employee',
+            match: item.match ?? 0,
+            matchedSkills: item.matchedSkills ?? [],
+          }));
+          if (items?.[0]?.employeeName) this.employeeName = items[0].employeeName;
+          this.employeeProjectsLoading = false;
+        },
+        error: (error) => {
+          this.employeeProjectsError =
+            error.name === 'TimeoutError'
+              ? 'Project matching took too long. Showing the published project feed instead.'
+              : error.error?.message ||
+                'Could not load project matches. Showing the published project feed instead.';
+          this.employeeProjectsLoading = false;
+        },
+      });
+  }
+  applyForEmployee(post: Post): void {
+    const projectId = String(post.id);
+    if (!this.employeeMode || this.applyingProjectId || this.appliedProjectIds.has(projectId))
+      return;
+    this.applyingProjectId = projectId;
+    this.notice = '';
+    this.http
+      .post<any>(
+        `${environment.apiUrl}/projects/${projectId}/apply-for-employee`,
+        {
+          pageId: this.employeePageId,
+          employeeId: this.employeeId,
+        },
+        { headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }) },
+      )
+      .subscribe({
+        next: (result) => {
+          this.applyingProjectId = '';
+          this.appliedProjectIds.add(projectId);
+          this.notice = result?.alreadyApplied
+            ? `${this.employeeName} has already applied to this project.`
+            : `Application submitted for ${this.employeeName}.`;
+        },
+        error: (error) => {
+          this.applyingProjectId = '';
+          this.notice = error.error?.message || 'The application could not be submitted.';
+        },
+      });
+  }
+  hasAppliedForEmployee(post: Post): boolean {
+    return this.appliedProjectIds.has(String(post.id));
+  }
+  isApplyingForEmployee(post: Post): boolean {
+    return this.applyingProjectId === String(post.id);
   }
   openContact(user: any): void {
     this.contactUser = user;
@@ -84,6 +187,9 @@ export class DiscoverPage {
   }
 
   readonly types: FeedType[] = ['All', 'Projects', 'Jobs'];
+  get visibleTypes(): FeedType[] {
+    return this.employeeMode ? ['Projects'] : this.types;
+  }
   readonly categories = ['All', 'Product design', 'Engineering', 'Marketing', 'Creative'];
   readonly branches = Object.values(Branches);
   readonly featuredBranches = [
@@ -183,27 +289,58 @@ export class DiscoverPage {
   ];
 
   get filteredPosts(): Post[] {
+    if (this.employeeMode) {
+      const source = this.employeeProjects.length
+        ? this.employeeProjects
+        : this.projectsService.publishedProjects().map((project) => ({
+            id: project.id,
+            pageId: project.pageId,
+            type: 'Project' as const,
+            category: project.category,
+            branch: project.branch,
+            author: project.pageName || 'Company',
+            authorInitials: (project.pageName || 'Company').slice(0, 2).toUpperCase(),
+            avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
+            headline: 'Published project',
+            posted: 'Recently',
+            title: project.title,
+            summary: project.summary,
+            details: project.details,
+            tags: project.skills ?? [],
+            likes: 0,
+            comments: 0,
+            callToAction: 'Apply as employee',
+            match: 0,
+            matchedSkills: [],
+          }));
+      return source.filter(
+        (post) =>
+          String(post.pageId ?? '') !== this.employeePageId &&
+          (this.selectedType === 'All' || this.selectedType === 'Projects') &&
+          (this.selectedCategory === 'All' || post.category === this.selectedCategory) &&
+          (this.selectedBranch === 'All' || post.branch === this.selectedBranch),
+      );
+    }
     if (this.projectId) return [];
-    const companyProjects: Post[] = this.projectsService
-      .publishedProjects()
-      .map((project) => ({
-        id: project.id as any,
-        type: 'Project',
-        category: project.category,
-        branch: project.branch,
-        author: 'Company project',
-        authorInitials: 'CP',
-        avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
-        headline: 'Published project',
-        posted: 'Recently',
-        title: project.title,
-        summary: project.summary,
-        details: project.details,
-        tags: project.skills,
-        likes: 0,
-        comments: 0,
-        callToAction: 'View project',
-      }));
+    const companyProjects: Post[] = this.projectsService.publishedProjects().map((project) => ({
+      id: project.id as any,
+      type: 'Project',
+      category: project.category,
+      branch: project.branch,
+      pageId: project.pageId,
+      author: project.pageName || 'Company',
+      authorInitials: (project.pageName || 'Company').slice(0, 2).toUpperCase(),
+      avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
+      headline: 'Published project',
+      posted: 'Recently',
+      title: project.title,
+      summary: project.summary,
+      details: project.details,
+      tags: project.skills,
+      likes: 0,
+      comments: 0,
+      callToAction: 'View project',
+    }));
     return companyProjects.filter((post) => {
       const typeMatches =
         this.selectedType === 'All' || post.type === this.selectedType.slice(0, -1);

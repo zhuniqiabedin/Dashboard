@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthenticatedRequest, JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateProjectDto, UpdateProjectDto } from './project.dto';
 import { ProjectsService } from './projects.service';
@@ -14,6 +14,24 @@ export class ProjectsController {
   @Get('discover') discover(): Promise<Record<string, unknown>[]> {
     return this.projects.listPublished();
   }
+  @Get('matching-for-employee') matchingForEmployee(
+    @Req() request: AuthenticatedRequest,
+    @Query('pageId') pageId: string,
+    @Query('employeeId') employeeId: string,
+  ): Promise<Record<string, unknown>[]> {
+    return this.projects.matchingProjectsForEmployee(request.user.sub, pageId, employeeId);
+  }
+  @Post(':id/apply') apply(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body('cv') cv: Record<string, unknown>) { return this.projects.apply(request.user.sub, id, cv); }
+  @Post(':id/apply-for-employee') applyForEmployee(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body('pageId') pageId: string,
+    @Body('employeeId') employeeId: string,
+  ) {
+    return this.projects.applyForEmployee(request.user.sub, id, pageId, employeeId);
+  }
+  @Get('applications/mine') myApplications(@Req() request: AuthenticatedRequest) { return this.projects.listMyApplications(request.user.sub); }
+  @Get(':id/applications') applicants(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.projects.listApplicants(request.user.sub, id); }
   @Get(':id/matching-users') matchingUsers(
     @Req() request: AuthenticatedRequest,
     @Param('id') id: string,

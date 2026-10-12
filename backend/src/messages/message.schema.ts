@@ -8,6 +8,7 @@ export class Message {
   @Prop({ type: Types.ObjectId, required: true, ref: 'User' }) senderId!: Types.ObjectId;
   @Prop({ required: true, trim: true, maxlength: 4000 }) text!: string;
   @Prop({ type: Date }) readAt?: Date;
+  @Prop({ type: Object }) attachment?: { fileId: Types.ObjectId; filename: string; mimeType: string; size: number };
 }
 export const MessageSchema = SchemaFactory.createForClass(Message);
 

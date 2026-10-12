@@ -1,0 +1,257 @@
+<div class="min-h-[calc(100vh-76px)] bg-[#f1f4f8]">
+  <div class="mx-auto max-w-[1600px] px-5 py-6 sm:px-8 lg:px-10">
+    <nav
+      class="mb-5 flex flex-wrap items-center gap-3 text-sm text-stone-500"
+      aria-label="Discovery navigation"
+    >
+      <a routerLink="/discover_projects" class="hover:text-[#2864dc]">Explore projects</a
+      ><span>·</span
+      ><a routerLink="/discover_jobs" class="hover:text-[#2864dc]">Explore jobs</a> @if (company();
+      as company) {<span>›</span><b class="text-stone-800">{{ company.name }}</b>}
+    </nav>
+    @if (loading()) {
+    <p role="status">Loading company…</p>
+    } @else if (error()) {
+    <p role="alert" class="text-red-700">{{ error() }}</p>
+    } @else if (company(); as company) {
+    <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
+      <div class="grid min-h-[220px] overflow-hidden md:grid-cols-[minmax(300px,.6fr)_1fr]">
+        <div
+          class="relative flex min-h-[220px] flex-col justify-center overflow-hidden bg-[#294b39] px-8 py-8 text-white sm:px-10"
+        >
+          <div
+            class="absolute -right-10 -bottom-24 size-64 rounded-full border border-white/10"
+          ></div>
+          <p class="relative text-[10px] font-semibold tracking-[.18em] text-white/70">
+            COMPANY PAGE
+          </p>
+          <h1 class="relative mt-3 max-w-md text-3xl leading-tight font-semibold sm:text-4xl">
+            Build something great together.
+          </h1>
+          <p class="relative mt-4 text-xs tracking-wide text-white/70">
+            {{ company.name }} <span class="mx-2">/</span> {{ company.location || 'Your company' }}
+          </p>
+        </div>
+        <div
+          class="relative min-h-[220px] overflow-hidden bg-gradient-to-br from-[#d6e5d2] via-[#88a998] to-[#405f50]"
+        >
+          <div
+            class="absolute inset-0 bg-[radial-gradient(ellipse_at_25%_35%,rgba(255,255,255,.62),transparent_34%),radial-gradient(ellipse_at_80%_65%,rgba(27,57,42,.42),transparent_50%)]"
+          ></div>
+          <div
+            class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/15 to-transparent"
+          ></div>
+        </div>
+      </div>
+      <div
+        class="flex flex-wrap items-center justify-between gap-5 border-b border-stone-200 px-6 py-5 sm:px-8"
+      >
+        <div class="flex min-w-0 items-center gap-4">
+          <span
+            class="grid size-[72px] shrink-0 place-items-center overflow-hidden rounded-xl bg-[#294b39] text-2xl font-semibold text-white"
+            >@if (company.logo) {
+            <img
+              [src]="company.logo"
+              [alt]="company.name + ' logo'"
+              class="size-full object-cover"
+            />
+            } @else { {{ company.name.slice(0, 1).toUpperCase() }} }</span
+          >
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ company.name }}</h2>
+              <span
+                class="rounded-md bg-[#eaf5ee] px-2 py-1 text-[10px] font-semibold text-[#3d775d]"
+                >COMPANY</span
+              >
+            </div>
+            <p class="mt-1 text-sm text-stone-500">
+              {{ company.location || 'Company page' }} · {{ company.employeeCount }} employees
+            </p>
+            <p class="mt-1 max-w-2xl truncate text-sm text-stone-500">{{ company.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap items-center gap-1 px-6 sm:px-8" aria-label="Company page tabs">
+        <a
+          [routerLink]="['/company', companyId, 'posts']"
+          class="border-b-2 px-3 py-4 text-sm capitalize"
+          [class.border-[#2864dc]]="selectedTab() === 'posts'"
+          [class.text-[#2864dc]]="selectedTab() === 'posts'"
+          [class.border-transparent]="selectedTab() !== 'posts'"
+          [class.text-stone-500]="selectedTab() !== 'posts'"
+          [attr.aria-current]="selectedTab() === 'posts' ? 'page' : null"
+          >Posts</a
+        >
+        <button
+          class="border-b-2 px-3 py-4 text-sm capitalize"
+          [class.border-[#2864dc]]="selectedTab() === 'about'"
+          [class.text-[#2864dc]]="selectedTab() === 'about'"
+          [class.border-transparent]="selectedTab() !== 'about'"
+          [class.text-stone-500]="selectedTab() !== 'about'"
+          [attr.aria-current]="selectedTab() === 'about' ? 'page' : null"
+          (click)="selectedTab.set('about')"
+        >
+          About
+        </button>
+        <a
+          [routerLink]="['/company', companyId, 'projects']"
+          class="border-b-2 px-3 py-4 text-sm capitalize"
+          [class.border-[#2864dc]]="selectedTab() === 'projects'"
+          [class.text-[#2864dc]]="selectedTab() === 'projects'"
+          [class.border-transparent]="selectedTab() !== 'projects'"
+          [class.text-stone-500]="selectedTab() !== 'projects'"
+          [attr.aria-current]="selectedTab() === 'projects' ? 'page' : null"
+          >Projects ({{ company.projects.length }})</a
+        >
+        <a
+          [routerLink]="['/company', companyId, 'jobs']"
+          class="border-b-2 px-3 py-4 text-sm capitalize"
+          [class.border-[#2864dc]]="selectedTab() === 'jobs'"
+          [class.text-[#2864dc]]="selectedTab() === 'jobs'"
+          [class.border-transparent]="selectedTab() !== 'jobs'"
+          [class.text-stone-500]="selectedTab() !== 'jobs'"
+          [attr.aria-current]="selectedTab() === 'jobs' ? 'page' : null"
+          >Jobs ({{ company.jobs.length }})</a
+        >
+        <span class="ml-auto hidden py-4 text-xs text-stone-400 sm:block"
+          >◎ &nbsp; Company page</span
+        >
+      </nav>
+    </section>
+    @if (selectedTab() === 'posts' || selectedTab() === 'about') {
+    <section class="mt-5 grid gap-5 xl:grid-cols-[minmax(280px,.75fr)_minmax(0,1.8fr)]">
+      <div class="space-y-5">
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+          <h3 class="font-semibold">About {{ company.name }}</h3>
+          <p class="mt-4 text-sm leading-6 break-words whitespace-pre-line text-stone-500">
+            {{ company.description }}
+          </p>
+          <div class="mt-4 space-y-3 text-sm text-stone-500">
+            <p>⌖ &nbsp;{{ company.location || 'Location not set' }}</p>
+            @if (websiteUrl(company.website); as url) {<a
+              [href]="url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="block break-all text-[#2864dc] hover:underline"
+              >◎ &nbsp;{{ company.website }}</a
+            >}
+          </div>
+        </article>
+        <article class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5">
+          <span
+            class="grid size-11 place-items-center rounded-xl bg-[#e9f0ff] text-lg text-[#2864dc]"
+            >♧</span
+          >
+          <div>
+            <b class="block text-2xl font-medium">{{ company.employeeCount }}</b>
+            <p class="text-xs text-stone-500">Employees</p>
+          </div>
+        </article>
+      </div>
+      @if (selectedTab() === 'posts') {
+      <article class="self-start overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <div class="flex items-center gap-3 p-5">
+          <span
+            class="grid size-11 place-items-center overflow-hidden rounded-xl bg-[#294b39] font-semibold text-white"
+          >
+            @if (company.logo) {<img
+              [src]="company.logo"
+              [alt]="company.name + ' logo'"
+              class="size-full object-cover"
+            />} @else { {{ company.name.slice(0, 1).toUpperCase() }} }
+          </span>
+          <div>
+            <b class="text-sm">{{ company.name }}</b>
+            <p class="mt-1 text-xs text-stone-400">Company introduction</p>
+          </div>
+        </div>
+        <p class="px-5 pb-5 text-sm leading-6 text-stone-700">
+          Welcome to {{ company.name }}. {{ company.description }}
+        </p>
+        <div
+          class="flex min-h-48 items-center justify-center bg-gradient-to-br from-[#dce9df] via-[#a9c1ad] to-[#597765]"
+        >
+          <span class="text-5xl font-semibold text-white/80"
+            >{{ company.name.slice(0, 1).toUpperCase() }}</span
+          >
+        </div>
+        <p class="px-5 py-4 text-xs text-stone-400">
+          Company page · {{ company.employeeCount }} employees
+        </p>
+      </article>
+      }
+    </section>
+    } @else {
+    <section class="mt-5" aria-live="polite">
+      <h2 class="text-xl font-semibold">Published {{ selectedTab() }} at {{ company.name }}</h2>
+      @if (selectedTab() === 'projects' && applicationError()) {
+      <p class="mt-2 text-sm text-red-700" role="alert">{{ applicationError() }}</p>
+      }
+      <div class="mt-4 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        @if (selectedTab() === 'projects') { @for (project of company.projects; track project._id) {
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+          <p class="text-xs font-medium text-[#2864dc]">{{ project.category }}</p>
+          <h3 class="mt-2 text-lg font-semibold">{{ project.title }}</h3>
+          <p class="mt-3 text-sm break-words whitespace-pre-line text-stone-600">
+            {{ project.summary }}
+          </p>
+          @if (project.details) {
+          <p class="mt-3 text-sm break-words whitespace-pre-line text-stone-500">
+            {{ project.details }}
+          </p>
+          } @if (project.hourlyRate) {
+          <p class="mt-3 text-sm font-medium">{{ project.hourlyRate | currency:'EUR' }} / hour</p>
+          } @if (project.startDate) {
+          <p class="mt-3 text-xs text-stone-500">
+            Starts {{ project.startDate | date:'mediumDate' }}
+          </p>
+          }
+          <button
+            class="mt-4 rounded-xl bg-[#2864dc] px-4 py-2 text-sm text-white"
+            [disabled]="appliedProjects().includes(project._id) || applyingProjects().includes(project._id)"
+            (click)="applyProject(project)"
+          >
+            {{ appliedProjects().includes(project._id) ? 'Applied' : applyingProjects().includes(project._id) ? 'Applying…' : 'Apply to project' }}
+          </button>
+          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Project skills">
+            @for (skill of project.skills || []; track $index) {
+            <li
+              class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs break-words text-[#0a66c2]"
+            >
+              {{ skill }}
+            </li>
+            }
+          </ul>
+        </article>
+        } @empty {
+        <p class="text-sm text-stone-500">No published projects yet.</p>
+        } } @else { @for (job of company.jobs; track job._id) {
+        <article class="rounded-2xl border border-stone-200 bg-white p-6">
+          <h3 class="text-lg font-semibold">{{ job.title }}</h3>
+          <p class="mt-2 text-sm text-stone-500">{{ job.location }} · {{ job.workplace }}</p>
+          <p class="mt-3 text-sm font-medium">
+            {{ job.annualSalary || 0 | currency:'EUR':'symbol':'1.0-2' }} / year
+          </p>
+          <p class="mt-3 text-sm break-words whitespace-pre-line text-stone-600">
+            {{ job.description }}
+          </p>
+          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Job skills">
+            @for (skill of job.skills || []; track $index) {
+            <li
+              class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs break-words text-[#0a66c2]"
+            >
+              {{ skill }}
+            </li>
+            }
+          </ul>
+        </article>
+        } @empty {
+        <p class="text-sm text-stone-500">No published jobs yet.</p>
+        } }
+      </div>
+    </section>
+    } }
+  </div>
+</div>

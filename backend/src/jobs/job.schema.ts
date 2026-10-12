@@ -9,6 +9,9 @@ export class Job {
   @Prop({ required: true, trim: true, maxlength: 120 }) location!: string;
   @Prop({ default: '', maxlength: 1000 }) description!: string;
   @Prop({ default: 'Open', enum: ['Open', 'Closed'] }) status!: 'Open' | 'Closed';
+  @Prop({ default: 'Onsite', enum: ['Remote', 'Hybrid', 'Onsite'] }) workplace!: 'Remote' | 'Hybrid' | 'Onsite';
+  @Prop({ type: [String], default: [] }) skills!: string[];
+  @Prop({ default: false }) isPublished!: boolean;
   @Prop({ min: 0, default: 0 }) annualSalary!: number;
 }
 export const JobSchema = SchemaFactory.createForClass(Job);

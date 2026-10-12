@@ -1,12 +1,17 @@
-import { Component, HostListener } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, HostBinding, HostListener } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-user-remote',
   standalone: true,
   imports: [RouterLink, RouterLinkActive, RouterOutlet],
   template: `
-    <div class="min-h-[calc(100vh-72px)] bg-white">
+    <div
+      [class]="
+        chatLayout ? 'h-full min-h-0 overflow-hidden bg-white' : 'min-h-[calc(100vh-72px)] bg-white'
+      "
+    >
       @if (false) {
         <aside
           [class.hidden]="companyMode"
@@ -37,7 +42,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           </nav>
         </aside>
       }
-      <main class="min-w-0">
+      <main [class]="chatLayout ? 'h-full min-h-0 min-w-0 overflow-hidden' : 'min-w-0'">
         <router-outlet />
       </main>
     </div>
@@ -45,6 +50,24 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 })
 export class UserRemoteComponent {
   companyMode = false;
+  chatLayout = false;
+
+  @HostBinding('class') get hostClasses(): string {
+    return this.chatLayout ? 'block h-full min-h-0 min-w-0 overflow-hidden' : 'block min-w-0';
+  }
+
+  constructor(router: Router) {
+    const update = (url: string) => {
+      const segments = url.split('?')[0].split('/').filter(Boolean);
+      this.chatLayout =
+        segments[0] === 'messages' ||
+        (segments[0] === 'companies' && segments.at(-1) === 'messages');
+    };
+    update(router.url);
+    router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => update(event.urlAfterRedirects));
+  }
 
   @HostListener('window:career-space-company-mode', ['$event'])
   setCompanyMode(event: Event): void {

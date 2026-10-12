@@ -11,7 +11,10 @@ import { SkillsChipsComponent } from '../../shared/skills-chips/skills-chips.com
     CommonModule,
     FormsModule,
     SkillsChipsComponent,
-    RouterModule.forChild([{ path: '', component: DiscoverPage }]),
+    RouterModule.forChild([
+      { path: 'employee/:pageId/:employeeId', component: DiscoverPage },
+      { path: '', component: DiscoverPage },
+    ]),
   ],
 })
 export class DiscoverModule {}

@@ -10,6 +10,7 @@ export class CompaniesController {
   @Get('mine') list(@Req() request: AuthenticatedRequest) {
     return this.companies.listMine(request.user.sub);
   }
+  @Get(':id/profile') profile(@Param('id') id: string) { return this.companies.publicProfile(id); }
   @Post() create(@Req() request: AuthenticatedRequest, @Body() input: CreateCompanyDto) {
     return this.companies.create(request.user.sub, input);
   }

@@ -1,7 +1,8 @@
-import { Component, HostListener } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, Subscription } from 'rxjs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBell,
@@ -22,16 +23,26 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService, AuthUser } from './core/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../environments/environment';
+import { MessagesSocketService } from './core/messages-socket.service';
 
 type User = AuthUser;
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [FormsModule, RouterLink, RouterLinkActive, RouterOutlet, FontAwesomeModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    FontAwesomeModule,
+  ],
   templateUrl: './app.component.html',
 })
-export class AppComponent {
+export class AppComponent implements OnDestroy {
   readonly faBell = faBell;
   readonly faCompass = faCompass;
   readonly faComments = faComments;
@@ -58,18 +69,80 @@ export class AppComponent {
   password = '';
   busy = false;
   companyMode = false;
+  fullHeightChat = false;
+  notificationsOpen = false;
+  notifications: any[] = [];
+  private notificationsTimer?: ReturnType<typeof setInterval>;
+  private readonly sessionExpiredSubscription: Subscription;
 
   constructor(
     private readonly auth: AuthService,
     private readonly router: Router,
+    private readonly changeDetector: ChangeDetectorRef,
+    private readonly http: HttpClient,
+    private readonly messagesSocket: MessagesSocketService,
   ) {
     this.user = this.readUser();
+    if (!this.user && sessionStorage.getItem('career-space-session-expired') === 'true') {
+      sessionStorage.removeItem('career-space-session-expired');
+      this.notice = 'Your session has expired. Please sign in again.';
+    }
+    this.sessionExpiredSubscription = this.auth.sessionExpired$.subscribe(() => {
+      this.messagesSocket.disconnect();
+      if (this.notificationsTimer) clearInterval(this.notificationsTimer);
+      this.notificationsTimer = undefined;
+      this.notifications = [];
+      this.user = null;
+      this.signup = false;
+      this.password = '';
+      this.notice = 'Your session has expired. Please sign in again.';
+      this.changeDetector.markForCheck();
+    });
+    if (this.user) {
+      this.loadNotifications();
+      this.notificationsTimer = setInterval(() => this.loadNotifications(), 30_000);
+    }
+    if (this.auth.token) this.messagesSocket.connect(this.auth.token);
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
         const parts = event.urlAfterRedirects.split('/').filter(Boolean);
         this.companyMode = parts[0] === 'companies' && parts.length >= 2;
+        this.fullHeightChat =
+          parts[0] === 'messages' || (parts[0] === 'companies' && parts.at(-1) === 'messages');
+        this.changeDetector.markForCheck();
       });
+  }
+  ngOnDestroy() {
+    if (this.notificationsTimer) clearInterval(this.notificationsTimer);
+    this.sessionExpiredSubscription.unsubscribe();
+  }
+
+  loadNotifications() {
+    this.http
+      .get<any[]>(`${environment.apiUrl}/notifications/mine`, {
+        headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+      })
+      .subscribe({
+        next: (items) => {
+          this.notifications = items || [];
+          this.changeDetector.markForCheck();
+        },
+      });
+  }
+  openNotification(item: any) {
+    this.http
+      .post(
+        `${environment.apiUrl}/notifications/${item._id}/read`,
+        {},
+        { headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }) },
+      )
+      .subscribe();
+    this.notificationsOpen = false;
+    void this.router.navigate(
+      ['/companies', item.pageId, item.type === 'job_application' ? 'jobs' : 'projects'],
+      { queryParams: { applicants: item.itemId } },
+    );
   }
 
   private readUser(): User | null {
@@ -113,21 +186,41 @@ export class AppComponent {
     request.subscribe({
       next: ({ user }) => {
         this.user = user;
+        if (this.auth.token) this.messagesSocket.connect(this.auth.token);
+        this.loadNotifications();
+        if (!this.notificationsTimer)
+          this.notificationsTimer = setInterval(() => this.loadNotifications(), 30_000);
         this.password = '';
         this.busy = false;
+        this.changeDetector.markForCheck();
+        void this.router.navigateByUrl('/overview', { replaceUrl: true });
       },
       error: (error: HttpErrorResponse) => {
         this.busy = false;
         this.notice =
           error.error?.message ||
           'Could not connect to the server. Make sure the Career Space API is running.';
+        this.changeDetector.markForCheck();
       },
     });
   }
   logout(): void {
+    this.messagesSocket.disconnect();
+    if (this.notificationsTimer) clearInterval(this.notificationsTimer);
+    this.notificationsTimer = undefined;
     this.auth.logout();
     this.user = null;
+    this.signup = false;
+    this.name = '';
+    this.email = '';
     this.password = '';
     this.userMenu = false;
+    this.mobileOpen = false;
+    this.companyMode = false;
+    this.notice = '';
+    this.search = '';
+    this.busy = false;
+    // Reload to discard cached service data, pending requests, and socket connections.
+    window.location.replace('/login');
   }
 }

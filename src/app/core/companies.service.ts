@@ -13,10 +13,11 @@ export type Company = {
   logo?: string;
   employeeIds: string[];
   projectIds: string[];
-  jobIds: string[];
+  jobs?: string[];
   employees?: {
     userId: string | { name?: string; email?: string };
-    role: 'owner' | 'admin' | 'recruiter' | 'member';
+    role: 'owner' | 'admin' | 'recruiter' | 'hr' | 'member';
+    roles?: ('owner' | 'admin' | 'recruiter' | 'hr' | 'member')[];
   }[];
 };
 export type PageProject = {
@@ -27,9 +28,22 @@ export type PageProject = {
   startDate: string;
   pageId: string;
 };
-export type PageJob = { title: string; location: string; description: string; pageId: string; annualSalary?: number };
+export type PageJob = {
+  isPublished?: boolean;
+  title: string;
+  location: string;
+  description: string;
+  pageId: string;
+  annualSalary?: number;
+  workplace: 'Remote' | 'Hybrid' | 'Onsite';
+  skills?: string[];
+};
 @Injectable({ providedIn: 'root' })
 export class CompaniesService {
+  readonly pageJobs = signal<(PageJob & { _id: string; status: string })[]>([]);
+  readonly jobsLoading = signal(false);
+  readonly jobsError = signal('');
+  private jobsPageId = '';
   readonly companies = signal<Company[]>([]);
   readonly pageProjects = signal<Record<string, any>[]>([]);
   readonly loading = signal(false);
@@ -59,11 +73,11 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not create company.'),
       });
   }
-  addEmployee(id: string, email: string, role = 'member'): void {
+  addEmployee(id: string, email: string, roles: string[] = ['member']): void {
     this.http
       .post(
         `${environment.apiUrl}/companies/${id}/employees`,
-        { email, role },
+        { email, roles },
         { headers: this.headers() },
       )
       .subscribe({
@@ -71,11 +85,11 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not add employee.'),
       });
   }
-  updateEmployeeRole(id: string, employeeId: string, role: string): void {
+  updateEmployeeRole(id: string, employeeId: string, roles: string[]): void {
     this.http
       .patch(
         `${environment.apiUrl}/companies/${id}/employees/${employeeId}/role`,
-        { role },
+        { roles },
         { headers: this.headers() },
       )
       .subscribe(() => this.load());
@@ -122,11 +136,72 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not load page projects.'),
       });
   }
-  createJob(input: PageJob): void {
-    this.http.post(`${environment.apiUrl}/jobs`, input, { headers: this.headers() }).subscribe({
-      next: () => this.load(),
-      error: (error) => this.error.set(error.error?.message || 'Could not create job.'),
-    });
+  loadJobs(pageId: string): void {
+    this.jobsPageId = pageId;
+    this.pageJobs.set([]);
+    this.jobsLoading.set(true);
+    this.jobsError.set('');
+    this.http
+      .get<(PageJob & { _id: string; status: string })[]>(
+        `${environment.apiUrl}/jobs/page/${pageId}?_=${Date.now()}`,
+        { headers: this.headers().set('Cache-Control', 'no-cache') },
+      )
+      .pipe(
+        finalize(() => {
+          if (this.jobsPageId === pageId) this.jobsLoading.set(false);
+        }),
+      )
+      .subscribe({
+        next: (jobs) => {
+          if (this.jobsPageId === pageId) this.pageJobs.set(jobs);
+        },
+        error: () => {
+          if (this.jobsPageId === pageId) this.jobsError.set('Could not load company jobs.');
+        },
+      });
+  }
+  createJob(input: PageJob, onCreated: () => void): void {
+    this.saving.set(true);
+    this.error.set('');
+    this.http
+      .post(`${environment.apiUrl}/jobs`, input, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.load();
+          this.loadJobs(input.pageId);
+          onCreated();
+        },
+        error: (error) => this.error.set(error.error?.message || 'Could not create job.'),
+      });
+  }
+  updateJob(id: string, input: Partial<PageJob>, pageId: string, onSaved: () => void): void {
+    this.saving.set(true);
+    this.error.set('');
+    this.http
+      .patch(`${environment.apiUrl}/jobs/${id}`, input, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.loadJobs(pageId);
+          onSaved();
+        },
+        error: (error) => this.error.set(error.error?.message || 'Could not update job.'),
+      });
+  }
+  deleteJob(id: string, pageId: string): void {
+    this.saving.set(true);
+    this.error.set('');
+    this.http
+      .delete(`${environment.apiUrl}/jobs/${id}`, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.loadJobs(pageId);
+          this.load();
+        },
+        error: (error) => this.error.set(error.error?.message || 'Could not delete job.'),
+      });
   }
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });

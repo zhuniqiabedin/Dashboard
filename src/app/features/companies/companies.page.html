@@ -88,15 +88,131 @@
   </div>
 </section>
 @if (companyDialog) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" (click)="closeCompanyDialog()">
-  <form class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl sm:p-8" (ngSubmit)="create()" (click)="$event.stopPropagation()">
-    <div class="flex items-start justify-between gap-4"><div><h2 class="text-xl font-semibold">Create a company</h2><p class="mt-1 text-sm text-stone-500">Add the details for your new company page.</p></div><button type="button" class="grid size-9 place-items-center rounded-lg text-lg text-stone-400 hover:bg-stone-100" (click)="closeCompanyDialog()" aria-label="Close">×</button></div>
-    <div class="mt-6 grid gap-4 sm:grid-cols-2"><div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium">Company name</label><input class="profile-input" [(ngModel)]="name" name="name" placeholder="Company name" required /></div><div><label class="mb-1.5 block text-sm font-medium">Location</label><input class="profile-input" [(ngModel)]="location" name="location" placeholder="City, country" /></div><div><label class="mb-1.5 block text-sm font-medium">Website</label><input class="profile-input" [(ngModel)]="website" name="website" placeholder="https://example.com" /></div><div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium">Description</label><textarea class="profile-input resize-y" [(ngModel)]="description" name="description" placeholder="What does the company do?" rows="4" required></textarea></div></div>
-    <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-xl px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100" (click)="closeCompanyDialog()">Cancel</button><button [disabled]="saving()" class="rounded-xl bg-[#2864dc] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{{ saving() ? 'Creating…' : 'Create company' }}</button></div>
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"
+  (click)="closeCompanyDialog()"
+>
+  <form
+    class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+    (ngSubmit)="create()"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold">Create a company</h2>
+        <p class="mt-1 text-sm text-stone-500">Add the details for your new company page.</p>
+      </div>
+      <button
+        type="button"
+        class="grid size-9 place-items-center rounded-lg text-lg text-stone-400 hover:bg-stone-100"
+        (click)="closeCompanyDialog()"
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <label class="mb-1.5 block text-sm font-medium">Company name</label
+        ><input
+          class="profile-input"
+          [(ngModel)]="name"
+          name="name"
+          placeholder="Company name"
+          required
+        />
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-medium" for="company-country-code"
+          >Country code</label
+        >
+        <input
+          id="company-country-code"
+          class="profile-input uppercase"
+          [(ngModel)]="countryCode"
+          name="countryCode"
+          placeholder="DE"
+          maxlength="2"
+          autocomplete="country"
+        />
+        <p class="mt-1 text-xs text-stone-500">Two-letter code, such as DE or US.</p>
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-medium" for="company-postal-code"
+          >Postal code</label
+        >
+        <div class="flex gap-2">
+          <input
+            id="company-postal-code"
+            class="profile-input min-w-0 flex-1"
+            [(ngModel)]="postalCode"
+            name="postalCode"
+            placeholder="83607"
+            autocomplete="postal-code"
+            (keydown.enter)="$event.preventDefault(); lookupCompanyLocation()"
+          />
+          <button
+            type="button"
+            class="shrink-0 rounded-xl border border-stone-200 px-3 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-60"
+            [disabled]="locationLookupLoading() || !postalCode.trim()"
+            (click)="lookupCompanyLocation()"
+          >
+            {{ locationLookupLoading() ? 'Looking…' : 'Find' }}
+          </button>
+        </div>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="mb-1.5 block text-sm font-medium" for="company-location">Location</label>
+        <input
+          id="company-location"
+          class="profile-input"
+          [(ngModel)]="location"
+          name="location"
+          placeholder="City, region, country"
+          autocomplete="address-level2"
+        />
+        @if (locationLookupError()) {
+        <p class="mt-1 text-xs text-red-600" role="status">{{ locationLookupError() }}</p>
+        }
+      </div>
+      <div>
+        <label class="mb-1.5 block text-sm font-medium">Website</label
+        ><input
+          class="profile-input"
+          [(ngModel)]="website"
+          name="website"
+          placeholder="https://example.com"
+        />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="mb-1.5 block text-sm font-medium">Description</label
+        ><textarea
+          class="profile-input resize-y"
+          [(ngModel)]="description"
+          name="description"
+          placeholder="What does the company do?"
+          rows="4"
+          required
+        ></textarea>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-end gap-3">
+      <button
+        type="button"
+        class="rounded-xl px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
+        (click)="closeCompanyDialog()"
+      >
+        Cancel</button
+      ><button
+        [disabled]="saving()"
+        class="rounded-xl bg-[#2864dc] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {{ saving() ? 'Creating…' : 'Create company' }}
+      </button>
+    </div>
   </form>
 </div>
-}
-} @else if (selectedCompany; as company) {
+} } @else if (selectedCompany; as company) {
 <div class="flex min-h-[calc(100vh-72px)] bg-[#f1f4f8]">
   <aside
     class="sticky top-[72px] z-10 flex h-[calc(100vh-72px)] w-[248px] shrink-0 flex-col self-start overflow-hidden border-r border-stone-200 bg-white px-4 py-5"
@@ -264,12 +380,12 @@
               (click)="selectedSection = 'settings'"
             >
               ✎ &nbsp; Edit page</button
-            ><button
+            ><a
+              [routerLink]="['/company', company._id]"
               class="rounded-xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-700"
-              (click)="pageNotice = 'Visitor preview is ready'"
             >
               ↗ &nbsp; View as visitor
-            </button>
+            </a>
           </div>
         </div>
         <nav class="flex flex-wrap items-center gap-1 px-6 sm:px-8" aria-label="Company page tabs">
@@ -296,8 +412,8 @@
       <section class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @for (metric of
         [{label:'Employees',value:company.employeeIds.length,icon:'♧',period:'Current'},{label:'Projects',value:company.projectIds.length,icon:'◉',period:'All
-        time'},{label:'Open
-        jobs',value:company.jobIds.length,icon:'▤',period:'Current'},{label:'Company
+        time'},{label:'Open jobs',value:(company.jobs ||
+        []).length,icon:'▤',period:'Current'},{label:'Company
         status',value:'Live',icon:'◉',period:'Page'}]; track metric.label) {
         <div class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-5">
           <span
@@ -420,87 +536,573 @@
         </div>
       </section>
       } @else if (selectedSection === 'projects') { @if (selectedProjectId) {
-          <app-project-detail-page [projectId]="selectedProjectId" [pageId]="company._id"></app-project-detail-page>
+      <app-project-detail-page
+        [projectId]="selectedProjectId"
+        [pageId]="company._id"
+      ></app-project-detail-page>
       } @else {
       <app-projects-page [pageId]="company._id"></app-projects-page>
       } } @else if (selectedSection === 'jobs') {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">
         <h1 class="text-2xl font-semibold">Jobs</h1>
         <p class="mt-1 text-sm text-stone-500">Publish jobs for {{ company.name }}.</p>
-        <form class="mt-5 grid max-w-2xl gap-3" (ngSubmit)="createPageJob(company._id)">
-          <input
-            class="profile-input"
-            [(ngModel)]="jobTitle"
-            name="jobTitle"
-            placeholder="Job title"
-            required
-          /><input
-            class="profile-input"
-            [(ngModel)]="jobLocation"
-            name="jobLocation"
-            placeholder="Location"
-            required
-          /><textarea
-            class="profile-input"
-            [(ngModel)]="jobDescription"
-            name="jobDescription"
-            placeholder="Job description"
-            rows="3"
-          ></textarea><input class="profile-input" [(ngModel)]="jobAnnualSalary" name="jobAnnualSalary" type="number" min="0" placeholder="Annual salary (€)"
-          ><button class="w-fit rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white">
-            Create job
-          </button>
-        </form>
+        <button
+          type="button"
+          class="mt-5 rounded-xl bg-[#2864dc] px-5 py-3 text-sm font-semibold text-white"
+          (click)="openJobDialog()"
+        >
+          ＋ New job
+        </button>
       </section>
-      } @else if (selectedSection === 'employees') {
-      <section class="overflow-hidden rounded-2xl border border-stone-200 bg-white">
-        <h1 class="text-2xl font-semibold">Inbox</h1>
+      @if (error() && !jobDialog()) {
+      <p class="mt-4 text-sm text-red-700" role="alert">{{ error() }}</p>
+      }
+      <section class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Company jobs">
+        @if (jobsLoading()) {
+        <p class="text-sm text-stone-500">Loading jobs…</p>
+        } @else if (jobsError()) {
+        <p class="text-sm text-red-700" role="alert">{{ jobsError() }}</p>
+        } @else { @for (job of pageJobs(); track job._id) {
+        <article class="rounded-2xl border border-stone-200 bg-white p-5">
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="font-semibold">{{ job.title }}</h2>
+            <span
+              class="rounded-full px-2.5 py-1 text-[10px] font-medium"
+              [class.bg-emerald-50]="job.isPublished"
+              [class.text-emerald-700]="job.isPublished"
+              [class.bg-stone-100]="!job.isPublished"
+              [class.text-stone-500]="!job.isPublished"
+              >{{ job.isPublished ? 'Published' : 'Unpublished' }}</span
+            >
+          </div>
+          <p class="mt-2 text-sm text-stone-500">
+            {{ job.location }} · {{ job.workplace || 'Onsite' }}
+          </p>
+          <p class="mt-2 text-sm font-medium">
+            {{ job.annualSalary || 0 | currency:'EUR':'symbol':'1.0-2' }} / year
+          </p>
+          <p class="mt-3 text-sm whitespace-pre-line text-stone-600">{{ job.description }}</p>
+          <div class="mt-4">
+            <h3 class="mb-2 text-xs font-semibold text-stone-600">Skills</h3>
+            <ul class="flex flex-wrap gap-2" aria-label="Job skills">
+              @for (skill of job.skills || []; track $index) {
+              <li
+                class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs font-medium break-words text-[#0a66c2]"
+              >
+                {{ skill }}
+              </li>
+              } @empty {
+              <li class="text-xs text-stone-400">No skills added yet.</li>
+              }
+            </ul>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-4 border-t border-stone-100 pt-4 text-sm">
+            <button
+              type="button"
+              class="font-medium text-[#2864dc]"
+              (click)="viewJobApplicants(job._id)"
+            >
+              Applicants
+            </button>
+            <button
+              type="button"
+              class="font-medium text-[#2864dc]"
+              [disabled]="saving()"
+              (click)="openJobDialog(job)"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              class="font-medium text-[#2864dc]"
+              [disabled]="saving()"
+              (click)="toggleJobPublication(job)"
+            >
+              {{ job.isPublished ? 'Unpublish' : 'Publish' }}
+            </button>
+            <button
+              type="button"
+              class="text-red-600"
+              [disabled]="saving()"
+              (click)="deleteJob(job)"
+            >
+              Delete
+            </button>
+          </div>
+        </article>
+        } @empty {
+        <p class="text-sm text-stone-500">No jobs yet. Create your first company job above.</p>
+        } }
+      </section>
+      @if (applicantJobId()) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 p-4"
+        (click)="applicantJobId.set('')"
+      >
+        <section
+          class="max-h-[80dvh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="job-applicants-title"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-center justify-between">
+            <h2 id="job-applicants-title" class="text-xl font-semibold">Job applicants</h2>
+            <button type="button" aria-label="Close applicants" (click)="applicantJobId.set('')">
+              ×
+            </button>
+          </div>
+          @if (applicantsLoading()) {
+          <p class="mt-5 text-sm" role="status">Loading applicants…</p>
+          } @else if (applicantsError()) {
+          <p class="mt-5 text-sm text-red-700" role="alert">
+            {{ applicantsError() }}
+            <button class="underline" (click)="viewJobApplicants(applicantJobId())">Retry</button>
+          </p>
+          } @else { @if (applicants().length) {
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            @for (applicant of applicants(); track applicant._id) {
+            <article class="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+              <div class="flex items-start gap-3">
+                @if (applicant.profile?.photo) {
+                <img
+                  [src]="applicant.profile.photo"
+                  [alt]="(applicant.userId?.name || 'Applicant') + ' profile photo'"
+                  class="size-12 shrink-0 rounded-full object-cover"
+                />
+                } @else {
+                <span
+                  class="grid size-12 shrink-0 place-items-center rounded-full bg-[#e8f3ff] font-semibold text-[#0a66c2]"
+                >
+                  {{ (applicant.userId?.name || 'A').slice(0, 1).toUpperCase() }}
+                </span>
+                }
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-semibold text-stone-900">
+                    {{ applicant.userId?.name || 'Unavailable user' }}
+                  </h3>
+                  @if (applicant.profile?.headline) {
+                  <p class="mt-0.5 text-sm font-medium text-stone-700">
+                    {{ applicant.profile.headline }}
+                  </p>
+                  }
+                  <p class="mt-1 text-sm break-all text-stone-600">{{ applicant.userId?.email }}</p>
+                </div>
+                <span
+                  class="shrink-0 rounded-full bg-[#eaf5ee] px-2.5 py-1 text-xs font-medium text-[#3d775d]"
+                  >{{ applicant.status }}</span
+                >
+              </div>
+              @if (applicant.profile; as profile) {
+              <div class="mt-4 grid gap-3 border-t border-stone-100 pt-4 text-sm sm:grid-cols-2">
+                <div>
+                  <b class="block text-xs text-stone-500">Phone</b>@if (profile.phone) {
+                  <a class="text-[#0a66c2] hover:underline" [href]="'tel:' + profile.phone"
+                    >{{ profile.phone }}</a
+                  >
+                  } @else { <span>Not provided</span> }
+                </div>
+                <div>
+                  <b class="block text-xs text-stone-500">Location</b
+                  ><span>{{ profile.location || 'Not provided' }}</span>
+                </div>
+                @if (profile.website) {
+                <div class="break-words">
+                  <b class="block text-xs text-stone-500">Website</b>{{ profile.website }}
+                </div>
+                } @if (profile.branch) {
+                <div>
+                  <b class="block text-xs text-stone-500">Industry</b>{{
+                  profile.branch.replaceAll('_', ' ') }}
+                </div>
+                }
+              </div>
+              <h4 class="mt-4 text-xs font-semibold text-stone-600">Skills</h4>
+              <ul class="mt-2 flex flex-wrap gap-2">
+                @for (skill of applicantSkills(profile.skills); track $index) {
+                <li
+                  class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs break-words text-[#0a66c2]"
+                >
+                  {{ skill }}
+                </li>
+                } @empty {
+                <li class="text-xs text-stone-400">No skills provided.</li>
+                }
+              </ul>
+              @if (profile.about) {
+              <h4 class="mt-4 text-xs font-semibold">About</h4>
+              <p class="mt-1 text-sm break-words whitespace-pre-line text-stone-600">
+                {{ profile.about }}
+              </p>
+              } @if (profile.experience) {
+              <h4 class="mt-4 text-xs font-semibold">Experience</h4>
+              <p class="mt-1 text-sm break-words whitespace-pre-line text-stone-600">
+                {{ profile.experience }}
+              </p>
+              } @if (profile.education) {
+              <h4 class="mt-4 text-xs font-semibold">Education</h4>
+              <p class="mt-1 text-sm break-words whitespace-pre-line text-stone-600">
+                {{ profile.education }}
+              </p>
+              } } @else {
+              <p class="mt-2 text-xs text-stone-400">No additional profile information provided.</p>
+              }
+              <p class="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500">
+                Applied {{ applicant.createdAt | date:'mediumDate' }}
+              </p>
+            </article>
+            }
+          </div>
+          } @else {
+          <p class="mt-5 text-sm text-stone-500">No applications yet.</p>
+          } }
+        </section>
+      </div>
+      } @if (jobDialog()) {
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 p-4 backdrop-blur-[2px]"
+        (click)="!saving() && jobDialog.set(false)"
+      >
+        <section
+          class="max-h-[calc(100dvh-2rem)] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-company-job-title"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="new-company-job-title" class="text-2xl font-semibold">
+                {{ editingJobId ? 'Edit job' : 'New job' }}
+              </h2>
+              <p class="mt-1 text-sm text-stone-500">Publish a job for {{ company.name }}.</p>
+            </div>
+            <button
+              type="button"
+              class="grid size-9 place-items-center rounded-full text-xl text-stone-400 hover:bg-stone-100"
+              aria-label="Close dialog"
+              [disabled]="saving()"
+              (click)="jobDialog.set(false)"
+            >
+              ×
+            </button>
+          </div>
+          <form
+            #jobForm="ngForm"
+            class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            (ngSubmit)="jobForm.valid && createPageJob(company._id)"
+          >
+            <div>
+              <label for="company-job-title" class="mb-1.5 block text-sm font-medium"
+                >Job title</label
+              ><input
+                id="company-job-title"
+                class="profile-input"
+                [(ngModel)]="jobTitle"
+                name="jobTitle"
+                placeholder="e.g. Product Designer"
+                maxlength="120"
+                required
+              />
+            </div>
+            <div>
+              <label for="company-job-salary" class="mb-1.5 block text-sm font-medium"
+                >Salary for 1 year (€)</label
+              ><input
+                id="company-job-salary"
+                class="profile-input"
+                [(ngModel)]="jobAnnualSalary"
+                name="jobAnnualSalary"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 60000"
+                required
+              />
+            </div>
+            <div>
+              <label for="company-job-workplace" class="mb-1.5 block text-sm font-medium"
+                >Work arrangement</label
+              ><select
+                id="company-job-workplace"
+                class="profile-input"
+                [(ngModel)]="jobWorkplace"
+                name="jobWorkplace"
+                required
+              >
+                <option value="Remote">Remote</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Onsite">Onsite</option>
+              </select>
+            </div>
+            <div>
+              <label for="company-job-location" class="mb-1.5 block text-sm font-medium"
+                >Location</label
+              ><input
+                id="company-job-location"
+                class="profile-input"
+                [(ngModel)]="jobLocation"
+                name="jobLocation"
+                placeholder="City, country, or remote region"
+                maxlength="120"
+                required
+              />
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label class="mb-1.5 block text-sm font-medium">Skills</label>
+              <app-skills-chips [(skills)]="jobSkills"></app-skills-chips>
+            </div>
+            <div class="sm:col-span-2 lg:col-span-3">
+              <label for="company-job-description" class="mb-1.5 block text-sm font-medium"
+                >Job description</label
+              ><textarea
+                id="company-job-description"
+                class="profile-input"
+                [(ngModel)]="jobDescription"
+                name="jobDescription"
+                placeholder="Describe the role and responsibilities"
+                maxlength="1000"
+                rows="4"
+              ></textarea>
+            </div>
+            <label class="flex items-center gap-2 text-sm sm:col-span-2 lg:col-span-3"
+              ><input type="checkbox" [(ngModel)]="jobPublished" name="jobPublished" /> Publish this
+              job</label
+            >
+            @if (error()) {
+            <p class="text-sm text-red-700 sm:col-span-2 lg:col-span-3" role="alert">
+              {{ error() }}
+            </p>
+            }
+            <div
+              class="flex justify-end gap-3 border-t border-stone-100 pt-4 sm:col-span-2 lg:col-span-3"
+            >
+              <button
+                type="button"
+                class="rounded-xl px-4 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-100"
+                [disabled]="saving()"
+                (click)="jobDialog.set(false)"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="saving() || jobForm.invalid"
+                class="rounded-xl bg-[#2864dc] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {{ saving() ? 'Saving…' : editingJobId ? 'Save changes' : 'Create job' }}
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+      } } @else if (selectedSection === 'employees') {
+      <section
+        class="flex h-[calc(100dvh-76px)] min-h-0 flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white p-5"
+      >
+        <h1 class="shrink-0 text-2xl font-semibold">Inbox</h1>
         <p class="mt-1 text-sm text-stone-500">
           People who contacted {{ company.name }} and people this page contacted.
         </p>
-        <div class="mt-5 grid min-h-[480px] border-t border-stone-100 md:grid-cols-[290px_1fr]">
-          <aside class="border-r border-stone-100">
-            @for (conversation of companyConversations; track conversation._id) {<button
-              class="w-full border-b border-stone-100 p-4 text-left hover:bg-stone-50"
-              [class.bg-[#e8f3ff]]="selectedCompanyConversation?._id === conversation._id"
-              (click)="selectedCompanyConversation = conversation"
-            >
-              <b class="block truncate text-sm"
-                >{{ conversation.userId?.name || conversation.userId?.email ||
-                conversation.pageId?.name || 'Conversation' }}</b
-              ><span class="mt-1 block text-xs font-medium text-[#2864dc]"
-                >{{ conversation.projectId ? 'Project' : conversation.jobId ? 'Job' : 'General conversation' }}</span
-              ><span class="mt-1 block truncate text-xs text-stone-400"
-                >{{ conversation.messages?.[conversation.messages.length - 1]?.text || 'No messages yet' }}</span
-              ></button
-            >} @empty {
-            <p class="p-4 text-sm text-stone-500">No conversations yet.</p>
-            }
-          </aside>
-          <main class="flex min-w-0 flex-col">
-            <div class="border-b border-stone-100 p-5">
-              <h2 class="font-semibold">
-                {{ selectedCompanyConversation?.userId?.name ||
-                selectedCompanyConversation?.userId?.email || 'Select a conversation' }}
-              </h2>
-            </div>
-            <div class="flex-1 space-y-3 overflow-y-auto p-5">
-              @for (message of selectedCompanyConversation?.messages || []; track message._id) {
-              <div class="flex" [class.justify-end]="isOwnCompanyMessage(message)">
-              <div class="max-w-xl rounded-2xl p-3 text-sm" [class.bg-[#2864dc]]="isOwnCompanyMessage(message)" [class.text-white]="isOwnCompanyMessage(message)" [class.bg-stone-100]="!isOwnCompanyMessage(message)">
-                <div>{{ message.text }}</div>
-                <small class="mt-1 block" [class.text-blue-100]="isOwnCompanyMessage(message)" [class.text-stone-400]="!isOwnCompanyMessage(message)"
-                  >{{ message.createdAt | date:'medium' }}</small
-                >
+        <div
+          class="mt-5 grid min-h-0 flex-1 overflow-hidden rounded-b-xl border-t border-stone-100 md:grid-cols-[320px_minmax(0,1fr)]"
+        >
+          <aside
+            class="flex min-h-0 flex-col border-r border-stone-100"
+            [class.hidden]="!!selectedCompanyConversation"
+            [class.md:flex]="!!selectedCompanyConversation"
+          >
+            <div class="shrink-0 border-b border-stone-100 p-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold">Chats</h2>
+                <span class="text-xs text-stone-400">{{companyConversations.length}}</span>
               </div>
+              <input
+                class="mt-4 w-full rounded-full bg-stone-100 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                [(ngModel)]="companyMessageQuery"
+                placeholder="Search messages"
+                aria-label="Search messages"
+              />
+              <div class="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  class="rounded-full px-4 py-2 text-sm"
+                  [class.bg-blue-100]="companyMessageFilter==='all'"
+                  (click)="companyMessageFilter='all'"
+                >
+                  All</button
+                ><button
+                  type="button"
+                  class="rounded-full px-4 py-2 text-sm"
+                  [class.bg-blue-100]="companyMessageFilter==='unread'"
+                  (click)="companyMessageFilter='unread'"
+                >
+                  Unread
+                </button>
+              </div>
+            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto p-2">
+              @for (conversation of filteredCompanyConversations; track conversation._id) {<button
+                class="flex w-full gap-3 rounded-xl p-3 text-left transition hover:bg-stone-50"
+                [class.bg-blue-50]="selectedCompanyConversation?._id===conversation._id"
+                (click)="selectCompanyConversation(conversation)"
+              >
+                <span
+                  class="relative grid size-12 shrink-0 place-items-center rounded-full bg-blue-100 font-semibold text-blue-700"
+                  >{{companyConversationTitle(conversation).slice(0,1).toUpperCase()}}<i
+                    class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-white"
+                    [class.bg-green-500]="isCompanyContactOnline(conversation)"
+                    [class.bg-gray-400]="!isCompanyContactOnline(conversation)"
+                    [attr.title]="isCompanyContactOnline(conversation) ? 'Online' : 'Offline'"
+                  ></i
+                ></span>
+                <span class="min-w-0 flex-1"
+                  ><span class="flex justify-between gap-2"
+                    ><b class="truncate text-sm">{{companyConversationTitle(conversation)}}</b
+                    ><small class="shrink-0 text-xs text-stone-400"
+                      >{{companyMessageDate(conversation.messages?.at(-1))}}</small
+                    ></span
+                  ><span class="mt-1 flex justify-between gap-2"
+                    ><span class="truncate text-sm text-stone-500"
+                      >{{conversation.messages?.at(-1)?.text ||
+                      conversation.messages?.at(-1)?.attachment?.filename || 'Start a
+                      conversation'}}</span
+                    >@if(companyUnreadCount(conversation)){<b
+                      class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-600 text-[10px] text-white"
+                      >{{companyUnreadCount(conversation)}}</b
+                    >}</span
+                  ><span class="mt-1 block truncate text-[11px] text-stone-400"
+                    >{{conversation.projectId ? 'Project' : conversation.jobId ? 'Job' : 'General
+                    conversation'}}</span
+                  ><small
+                    class="mt-1 block truncate text-[11px]"
+                    [class.text-green-600]="isCompanyContactOnline(conversation)"
+                    [class.text-gray-500]="!isCompanyContactOnline(conversation)"
+                    >{{companyContactStatus(conversation)}}</small
+                  ></span
+                ></button
+              >} @empty {
+              <p class="p-4 text-sm text-stone-500">No conversations match.</p>
+              }
+            </div>
+            <div
+              class="flex shrink-0 items-center justify-between border-t border-stone-200 p-4 text-xs"
+            >
+              <span class="flex items-center gap-2"
+                ><i
+                  class="size-2 rounded-full"
+                  [class.bg-emerald-500]="companyActiveStatus"
+                  [class.bg-stone-400]="!companyActiveStatus"
+                ></i
+                >{{companyActiveStatus ? 'Your active status is on' : 'Your active status is
+                off'}}</span
+              ><button
+                type="button"
+                class="font-medium text-blue-700"
+                (click)="setCompanyActiveStatus(!companyActiveStatus)"
+              >
+                Turn {{companyActiveStatus ? 'off' : 'on'}}
+              </button>
+            </div>
+          </aside>
+          <main
+            class="flex min-h-0 min-w-0 flex-col overflow-hidden"
+            [class.hidden]="!selectedCompanyConversation"
+            [class.md:flex]="!selectedCompanyConversation"
+          >
+            @if(selectedCompanyConversation){
+            <header class="flex shrink-0 items-center gap-3 border-b border-stone-100 p-4 sm:p-5">
+              <button
+                class="mr-1 text-stone-500 md:hidden"
+                aria-label="Back to conversations"
+                (click)="selectedCompanyConversation=null"
+              >
+                ←</button
+              ><span
+                class="relative grid size-11 shrink-0 place-items-center rounded-full bg-blue-100 font-semibold text-blue-700"
+                >{{companyConversationTitle(selectedCompanyConversation).slice(0,1).toUpperCase()}}<i
+                  class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-white"
+                  [class.bg-green-500]="isCompanyContactOnline(selectedCompanyConversation)"
+                  [class.bg-gray-400]="!isCompanyContactOnline(selectedCompanyConversation)"
+                ></i
+              ></span>
+              <div class="min-w-0">
+                <h2 class="truncate font-semibold">
+                  {{companyConversationTitle(selectedCompanyConversation)}}
+                </h2>
+                <p
+                  class="text-xs"
+                  [class.text-green-600]="isCompanyContactOnline(selectedCompanyConversation)"
+                  [class.text-gray-500]="!isCompanyContactOnline(selectedCompanyConversation)"
+                >
+                  {{companyContactStatus(selectedCompanyConversation)}} ·
+                  {{selectedCompanyConversation.projectId ? 'Project' :
+                  selectedCompanyConversation.jobId ? 'Job' : 'General conversation'}}
+                </p>
+              </div>
+            </header>
+            <div class="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-8">
+              @for(message of selectedCompanyConversation.messages || []; track message._id){
+              <div class="flex" [class.justify-end]="isOwnCompanyMessage(message)">
+                <div
+                  class="max-w-[78%] rounded-2xl px-4 py-3"
+                  [class.rounded-br-md]="isOwnCompanyMessage(message)"
+                  [class.bg-blue-600]="isOwnCompanyMessage(message)"
+                  [class.text-white]="isOwnCompanyMessage(message)"
+                  [class.bg-stone-100]="!isOwnCompanyMessage(message)"
+                >
+                  <p class="text-sm whitespace-pre-wrap">{{message.text}}</p>
+                  @if(message.attachment){<button
+                    type="button"
+                    class="mt-2 block max-w-full rounded-xl border border-current/20 px-3 py-2 text-left text-sm underline"
+                    (click)="downloadCompanyAttachment(message)"
+                  >
+                    {{message.attachment.mimeType.startsWith('image/') ? 'Image' : 'PDF'}} ·
+                    {{message.attachment.filename}} ·
+                    {{(message.attachment.size/1024/1024).toFixed(1)}} MB</button
+                  >}
+                  <p class="mt-2 text-right text-[10px] opacity-70">
+                    {{companyMessageDate(message)}}{{isOwnCompanyMessage(message) && message.readAt
+                    ? ' · Seen' : ''}}
+                  </p>
+                </div>
               </div>
               }
             </div>
-            @if (selectedCompanyConversation) {
-            <form class="flex gap-2 border-t border-stone-100 p-4" (ngSubmit)="sendCompanyMessage()">
-              <input class="flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm" [(ngModel)]="companyMessageText" name="companyMessage" placeholder="Write a message..." />
-              <button class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm font-medium text-white">Send</button>
+            @if(companyMessageError){
+            <p class="shrink-0 px-5 py-2 text-sm text-red-700">{{companyMessageError}}</p>
+            }
+            <form
+              class="flex shrink-0 items-center gap-2 border-t border-stone-100 p-4"
+              (ngSubmit)="sendCompanyMessage()"
+            >
+              <label
+                class="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-stone-100 text-lg text-blue-700"
+                title="Attach image or PDF"
+                >＋<input
+                  class="hidden"
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
+                  (change)="chooseCompanyMessageFile($event)" /></label
+              ><input
+                class="min-w-0 flex-1 rounded-full bg-stone-100 px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+                [(ngModel)]="companyMessageText"
+                name="companyMessage"
+                placeholder="Write a message…"
+              /><button
+                class="grid size-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white"
+                aria-label="Send message"
+              >
+                ➤
+              </button>
             </form>
+            } @else {
+            <div class="grid flex-1 place-items-center p-8 text-center text-stone-500">
+              <div>
+                <p class="text-lg font-semibold text-stone-700">Company messages</p>
+                <p class="mt-2 text-sm">Choose a conversation to continue.</p>
+              </div>
+            </div>
             }
           </main>
         </div>
@@ -517,13 +1119,15 @@
               >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
             ><b class="min-w-0 flex-1 truncate text-sm">{{ creatorName(employee.userId) }}</b
             ><select
-              class="rounded-lg border border-stone-200 px-2 py-2 text-xs"
-              [ngModel]="employee.role"
+              multiple
+              class="h-20 rounded-lg border border-stone-200 px-2 py-2 text-xs"
+              [ngModel]="employee.roles || [employee.role || 'member']"
               (ngModelChange)="updateEmployeeRole(company._id, employeeId(employee.userId), $event)"
             >
               <option value="owner">Owner</option>
               <option value="admin">Admin</option>
               <option value="recruiter">Recruiter</option>
+              <option value="hr">HR</option>
               <option value="member">Member</option></select
             ><button
               class="text-xs text-red-600"
@@ -541,10 +1145,11 @@
             class="profile-input flex-1"
             [(ngModel)]="employeeEmail"
             placeholder="Employee email"
-          /><select class="profile-input w-auto" [(ngModel)]="employeeRole">
+          /><select multiple class="profile-input w-auto" [(ngModel)]="employeeRoles">
             <option value="member">Member</option>
             <option value="admin">Admin</option>
-            <option value="recruiter">Recruiter</option></select
+            <option value="recruiter">Recruiter</option>
+            <option value="hr">HR</option></select
           ><button
             class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm text-white"
             (click)="selected = company._id; addEmployee()"

@@ -21,7 +21,14 @@ export class CvPage implements OnInit {
   editingProjectIndex: number | null = null;
   projectDraft: CvProject | null = null;
   profile: CvProfile = {
-    name: 'Your Name', email: '', headline: '', location: '', about: '', website: '', experience: '', photo: '',
+    name: 'Your Name',
+    email: '',
+    headline: '',
+    location: '',
+    about: '',
+    website: '',
+    experience: '',
+    photo: '',
   };
   newProject: CvProject = { title: '', description: '', link: '', skills: [] };
   newEducation: CvEducation = { school: '', degree: '', period: '' };
@@ -37,11 +44,17 @@ export class CvPage implements OnInit {
     const user = this.auth.readUser();
     this.profile.name = user?.name || this.profile.name;
     this.profile.email = user?.email || '';
-    this.http.get<Partial<CvProfile>>(`${environment.apiUrl}/profiles/me`, { headers: this.headers() })
-      .subscribe({ next: (profile) => this.profile = { ...this.profile, ...profile } });
+    this.http
+      .get<Partial<CvProfile>>(`${environment.apiUrl}/profiles/me`, { headers: this.headers() })
+      .subscribe({ next: (profile) => (this.profile = { ...this.profile, ...profile }) });
   }
   get initials(): string {
-    return this.profile.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+    return this.profile.name
+      .split(/\s+/)
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   }
   update(partial: object): void {
     const next = { ...this.cv(), ...partial };
@@ -97,21 +110,26 @@ export class CvPage implements OnInit {
   save(): void {
     this.service.save(this.cv());
     this.editing = false;
-    this.http.patch<Partial<CvProfile>>(
-      `${environment.apiUrl}/profiles/me`,
-      { experience: this.profile.experience, headline: this.profile.headline },
-      { headers: this.headers() },
-    ).subscribe({
-      next: (profile) => {
-        this.profile = { ...this.profile, ...profile };
-        this.notice = 'Your CV has been saved.';
-      },
-      error: () => {
-        this.notice = 'Your CV is saved locally. Your experience will sync when the API is available.';
-      },
-    });
+    this.http
+      .patch<Partial<CvProfile>>(
+        `${environment.apiUrl}/profiles/me`,
+        { experience: this.profile.experience, headline: this.profile.headline },
+        { headers: this.headers() },
+      )
+      .subscribe({
+        next: (profile) => {
+          this.profile = { ...this.profile, ...profile };
+          this.notice = 'Your CV has been saved.';
+        },
+        error: () => {
+          this.notice =
+            'Your CV is saved locally. Your experience will sync when the API is available.';
+        },
+      });
   }
-  downloadResume(): void { window.print(); }
+  downloadResume(): void {
+    window.print();
+  }
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }

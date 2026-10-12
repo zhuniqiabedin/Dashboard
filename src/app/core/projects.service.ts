@@ -7,6 +7,8 @@ import { environment } from '../../environments/environment';
 
 export type ProjectStatus = 'In progress' | 'Planning';
 export type Project = {
+  pageId?: string;
+  pageName?: string;
   id: string;
   title: string;
   summary: string;

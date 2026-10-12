@@ -18,6 +18,9 @@ export class Profile {
   @Prop({ default: '' })
   headline!: string;
 
+  @Prop({ default: '', trim: true, maxlength: 40 })
+  phone!: string;
+
   @Prop({ default: '' })
   location!: string;
 

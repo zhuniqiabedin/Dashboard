@@ -9,7 +9,9 @@ import { CompanyRole } from './company.schema';
 export class AddEmployeeDto {
   email!: string;
   role?: CompanyRole;
+  roles?: CompanyRole[];
 }
 export class UpdateEmployeeRoleDto {
   role!: CompanyRole;
+  roles?: CompanyRole[];
 }

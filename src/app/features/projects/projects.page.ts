@@ -1,12 +1,16 @@
-import { Component, Input, computed, SimpleChanges } from '@angular/core';
+import { Component, Input, computed, SimpleChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Branches } from '../../branches';
 import { Project, ProjectStatus, ProjectsService } from '../../core/projects.service';
 import { CompaniesService } from '../../core/companies.service';
 import { SkillsChipsComponent } from '../../shared/skills-chips/skills-chips.component';
 import { CvService } from '../../core/cv.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService } from '../../core/auth.service';
+import { environment } from '../../../environments/environment';
+import { ActivatedRoute } from '@angular/router';
 
 type StatusFilter = 'All' | ProjectStatus;
 type ProjectDraft = Pick<
@@ -39,25 +43,24 @@ export class ProjectsPage {
   selectedStatus: StatusFilter = 'All';
   publicationFilter: 'All' | 'Published' | 'Publish' = 'All';
   matchMySkills = false;
+  selectedEmployeeId = '';
   readonly statuses: StatusFilter[] = ['All', 'In progress', 'Planning'];
   readonly categories = ['Product design', 'Engineering', 'Marketing', 'Creative'];
   readonly branches = Object.values(Branches).filter((branch) => branch !== Branches.All);
   readonly projects = computed<Project[]>(() =>
     this.pageId
-      ? this.companiesService
-          .pageProjects()
-          .map((project: any) => ({
-            ...project,
-            id: project.id ?? project._id,
-            details: project.details ?? '',
-            category: project.category ?? 'Company project',
-            branch: project.branch ?? Branches.Other,
-            status: project.status ?? 'Planning',
-            progress: project.progress ?? 0,
-            startDate: project.startDate ?? '',
-            skills: project.skills ?? [],
-            isPublished: project.isPublished ?? false,
-          }))
+      ? this.companiesService.pageProjects().map((project: any) => ({
+          ...project,
+          id: project.id ?? project._id,
+          details: project.details ?? '',
+          category: project.category ?? 'Company project',
+          branch: project.branch ?? Branches.Other,
+          status: project.status ?? 'Planning',
+          progress: project.progress ?? 0,
+          startDate: project.startDate ?? '',
+          skills: project.skills ?? [],
+          isPublished: project.isPublished ?? false,
+        }))
       : this.projectsService.projects(),
   );
   get loading() {
@@ -67,16 +70,64 @@ export class ProjectsPage {
     return this.projectsService.saving;
   }
   draft: ProjectDraft = this.emptyDraft();
+  readonly applicantProjectId = signal('');
+  readonly projectApplicants = signal<any[]>([]);
+  readonly applicantError = signal('');
 
   constructor(
     private readonly projectsService: ProjectsService,
     private readonly companiesService: CompaniesService,
     private readonly cvService: CvService,
+    private readonly http: HttpClient,
+    private readonly auth: AuthService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
   ) {
     this.projectsService.load();
+    this.route.queryParamMap.subscribe((params) => {
+      const id = params.get('applicants');
+      if (id && this.pageId) this.viewApplicants({ id } as Project);
+    });
+  }
+  viewApplicants(project: Project) {
+    this.applicantProjectId.set(project.id);
+    this.projectApplicants.set([]);
+    this.applicantError.set('');
+    this.http
+      .get<any[]>(`${environment.apiUrl}/projects/${project.id}/applications`, {
+        headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+      })
+      .subscribe({
+        next: (items) => this.projectApplicants.set(items || []),
+        error: (e) =>
+          this.applicantError.set(e.error?.message || 'Could not load project applicants.'),
+      });
+  }
+  applicantSkills(value: unknown): string[] {
+    if (Array.isArray(value))
+      return value
+        .map(String)
+        .map((skill) => skill.trim())
+        .filter(Boolean);
+    const text = String(value ?? '').trim();
+    if (!text) return [];
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      /* older profile skills are comma separated */
+    }
+    return text
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter(Boolean);
   }
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['pageId']?.currentValue) this.companiesService.loadProjects(this.pageId);
+    if (changes['pageId']?.currentValue) {
+      this.companiesService.loadProjects(this.pageId);
+      const applicantId = this.route.snapshot.queryParamMap.get('applicants');
+      if (applicantId) this.viewApplicants({ id: applicantId } as Project);
+    }
   }
 
   get filteredProjects(): Project[] {
@@ -95,13 +146,36 @@ export class ProjectsPage {
       return statusMatches && publicationMatches && skillMatches;
     });
   }
+  get companyEmployees(): any[] {
+    return this.pageId
+      ? (this.companiesService.companies().find((company) => company._id === this.pageId)
+          ?.employees ?? [])
+      : [];
+  }
+  employeeUserId(employee: any): string {
+    return String(employee?.userId?._id ?? employee?.userId ?? '');
+  }
+  employeeName(employee: any): string {
+    return employee?.userId?.name || employee?.userId?.email || 'Company employee';
+  }
+  discoverProjectsForEmployee(): void {
+    if (!this.pageId || !this.selectedEmployeeId) return;
+    void this.router.navigate([
+      '/discover_projects',
+      'employee',
+      this.pageId,
+      this.selectedEmployeeId,
+    ]);
+  }
   openNewProjectDialog(): void {
+    if (!this.pageId) return;
     this.notice = '';
     this.draft = this.emptyDraft();
     this.editingProjectId = '';
     this.showNewProjectDialog = true;
   }
   openEditProject(project: Project): void {
+    if (!this.pageId) return;
     this.editingProjectId = project.id;
     this.draft = {
       title: project.title,
@@ -120,6 +194,7 @@ export class ProjectsPage {
     this.showNewProjectDialog = true;
   }
   togglePublish(project: Project): void {
+    if (!this.pageId) return;
     const payload = { ...project, isPublished: !project.isPublished, id: undefined } as Omit<
       Project,
       'id'
@@ -129,6 +204,7 @@ export class ProjectsPage {
     else this.projectsService.update(project.id, payload);
   }
   deleteProject(project: Project): void {
+    if (!this.pageId) return;
     if (!window.confirm(`Delete “${project.title}”? This cannot be undone.`)) return;
     if (this.pageId) this.companiesService.removeProject(project.id, this.pageId);
     else this.projectsService.remove(project.id);
@@ -138,6 +214,7 @@ export class ProjectsPage {
   }
 
   saveProject(): void {
+    if (!this.pageId) return;
     const title = this.draft.title.trim();
     const summary = this.draft.summary.trim();
     if (!title || !summary || !this.draft.startDate) return;

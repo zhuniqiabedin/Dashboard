@@ -93,6 +93,24 @@
               />
             </div>
             <div>
+              <label for="profile-phone" class="mb-1.5 block text-sm font-medium"
+                >Phone number (optional)</label
+              >
+              <input
+                id="profile-phone"
+                name="phone"
+                [(ngModel)]="profile.phone"
+                type="tel"
+                autocomplete="tel"
+                maxlength="40"
+                class="profile-input"
+                placeholder="e.g. +381 60 1234567"
+              />
+              <p class="mt-1 text-xs text-stone-500">
+                Shared with companies when you apply for their jobs.
+              </p>
+            </div>
+            <div>
               <label for="profile-location" class="mb-1.5 block text-sm font-medium"
                 >Location</label
               >

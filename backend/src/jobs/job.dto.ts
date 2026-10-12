@@ -1,1 +1,1 @@
-export class CreateJobDto { pageId!: string; title!: string; location!: string; description?: string; status?: 'Open' | 'Closed'; annualSalary?: number; }
+export class CreateJobDto { pageId!: string; isPublished?: boolean; title!: string; location!: string; description?: string; status?: 'Open' | 'Closed'; annualSalary?: number; skills?: string[]; workplace?: 'Remote' | 'Hybrid' | 'Onsite'; }

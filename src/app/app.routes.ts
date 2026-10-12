@@ -1,10 +1,31 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
+import { AuthService } from './core/auth.service';
 import { UserRemoteComponent } from './shell/user-remote.component';
+
+const requireSession: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return !!(auth.token && auth.readUser()) || inject(Router).createUrlTree(['/login']);
+};
+
+const requireGuest: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return !(auth.token && auth.readUser()) || inject(Router).createUrlTree(['/overview']);
+};
 
 export const routes: Routes = [
   {
+    path: 'login',
+    pathMatch: 'full',
+    canActivate: [requireGuest],
+    // AppComponent displays the login form when there is no authenticated user.
+    children: [],
+  },
+  {
     path: '',
     component: UserRemoteComponent,
+    canActivate: [requireSession],
+    canActivateChild: [requireSession],
     children: [
       {
         path: 'overview',
@@ -13,8 +34,8 @@ export const routes: Routes = [
       },
       {
         path: 'projects',
-        loadChildren: () =>
-          import('./features/projects/projects.module').then((m) => m.ProjectsModule),
+        pathMatch: 'full',
+        redirectTo: 'discover_projects',
       },
       {
         path: 'discover_projects',
@@ -38,13 +59,44 @@ export const routes: Routes = [
           import('./features/profile/profile.module').then((m) => m.ProfileModule),
       },
       {
+        path: 'company/:pageId/posts',
+        loadComponent: () =>
+          import('./features/companies/company-profile.page').then((m) => m.CompanyProfilePage),
+      },
+      {
+        path: 'company/:pageId/projects',
+        loadComponent: () =>
+          import('./features/companies/company-profile.page').then((m) => m.CompanyProfilePage),
+      },
+      {
+        path: 'company/:pageId/jobs',
+        loadComponent: () =>
+          import('./features/companies/company-profile.page').then((m) => m.CompanyProfilePage),
+      },
+      {
+        path: 'company/:pageId',
+        loadComponent: () =>
+          import('./features/companies/company-profile.page').then((m) => m.CompanyProfilePage),
+      },
+      {
         path: 'companies',
         loadChildren: () =>
           import('./features/companies/companies.module').then((m) => m.CompaniesModule),
       },
       {
+        path: 'jobs/applied',
+        loadComponent: () =>
+          import('./features/jobs/applied-jobs.page').then((m) => m.AppliedJobsPage),
+      },
+      {
+        path: 'discover_jobs',
+        loadComponent: () =>
+          import('./features/jobs/published-jobs.page').then((m) => m.PublishedJobsPage),
+      },
+      {
         path: 'jobs',
-        loadChildren: () => import('./features/jobs/jobs.module').then((m) => m.JobsModule),
+        pathMatch: 'full',
+        redirectTo: 'discover_jobs',
       },
       {
         path: 'calendar',

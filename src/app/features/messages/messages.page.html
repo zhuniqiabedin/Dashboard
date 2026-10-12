@@ -1,61 +1,186 @@
 <section
-  class="grid min-h-[calc(100vh-120px)] overflow-hidden rounded-2xl border border-stone-200 bg-white md:grid-cols-[320px_1fr]"
+  class="h-full min-h-0 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
 >
-  <aside class="border-r border-stone-200">
-    <h1 class="border-b border-stone-100 p-5 text-xl font-semibold">Messages</h1>
-    @for (conversation of conversations; track conversation._id) {<button
-      class="w-full border-b border-stone-100 p-4 text-left transition hover:bg-stone-50"
-      [class.bg-[#e8f3ff]]="selected?._id === conversation._id"
-      (click)="selectConversation(conversation)"
+  <div class="grid h-full min-h-0 md:grid-cols-[340px_minmax(0,1fr)]">
+    <aside
+      class="flex min-h-0 flex-col border-r border-stone-200"
+      [class.hidden]="!!selected"
+      [class.md:flex]="!!selected"
     >
-      <b class="block truncate text-sm">{{ conversationTitle(conversation) }}</b
-      ><span class="mt-1 block truncate text-xs text-stone-400"
-        >{{ conversation.messages?.[conversation.messages.length - 1]?.text || 'Project
-        conversation' }}</span
-      ></button
-    >} @empty {
-    <p class="p-5 text-sm text-stone-500">No messages yet.</p>
-    }
-  </aside>
-  <main class="flex min-w-0 flex-col">
-    <div class="border-b border-stone-100 p-5">
-      <h2 class="font-semibold">
-        {{ selected ? conversationTitle(selected) : 'Select a conversation' }}
-      </h2>
-      <span *ngIf="selected" class="text-xs text-stone-400"
-        >{{ participantOnline(selected) ? 'Online' : 'Offline' }}</span
-      >
-    </div>
-    <div class="flex-1 space-y-3 overflow-y-auto p-5">
-      @for (message of selected?.messages || []; track message._id) {
-      <div class="flex" [class.justify-end]="isOwnMessage(message)">
-        <div
-          class="max-w-xl rounded-2xl p-3 text-sm"
-          [class.bg-[#0a66c2]]="isOwnMessage(message)"
-          [class.text-white]="isOwnMessage(message)"
-          [class.bg-stone-100]="!isOwnMessage(message)"
-        >
-          <div>{{ message.text }}</div>
-          <div
-            class="mt-1 text-[10px]"
-            [class.text-blue-100]="isOwnMessage(message)"
-            [class.text-stone-400]="!isOwnMessage(message)"
+      <div class="border-b border-stone-100 p-5">
+        <div class="flex items-center justify-between">
+          <h1 class="text-xl font-semibold">Chats</h1>
+          <span class="text-xs text-stone-400">{{conversations.length}}</span>
+        </div>
+        <input
+          class="mt-4 w-full rounded-full bg-stone-100 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+          [(ngModel)]="query"
+          placeholder="Search messages"
+          aria-label="Search messages"
+        />
+        <div class="mt-4 flex gap-2">
+          <button
+            class="rounded-full px-4 py-2 text-sm"
+            [class.bg-blue-100]="filter==='all'"
+            (click)="filter='all'"
           >
-            {{ messageDate(message) }} · {{ message.readAt ? 'Seen' : 'Sent' }}
+            All</button
+          ><button
+            class="rounded-full px-4 py-2 text-sm"
+            [class.bg-blue-100]="filter==='unread'"
+            (click)="filter='unread'"
+          >
+            Unread
+          </button>
+        </div>
+      </div>
+      <div class="min-h-0 flex-1 overflow-y-auto p-2">
+        @for (conversation of filteredConversations; track conversation._id) {<button
+          class="flex w-full gap-3 rounded-xl p-3 text-left transition hover:bg-stone-50"
+          [class.bg-blue-50]="selected?._id===conversation._id"
+          (click)="selectConversation(conversation)"
+        >
+          <span
+            class="relative grid size-12 shrink-0 place-items-center rounded-full bg-blue-100 font-semibold text-blue-700"
+            >{{conversationTitle(conversation).slice(0,1).toUpperCase()}}<i
+              class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-white"
+              [class.bg-green-500]="participantOnline(conversation)"
+              [class.bg-gray-400]="!participantOnline(conversation)"
+              [attr.title]="participantOnline(conversation) ? 'Online' : 'Offline'"
+            ></i
+          ></span>
+          <span class="min-w-0 flex-1"
+            ><span class="flex justify-between gap-2"
+              ><b class="truncate text-sm">{{conversationTitle(conversation)}}</b
+              ><small class="shrink-0 text-xs text-stone-400"
+                >{{messageDate(conversation.messages?.at(-1))}}</small
+              ></span
+            ><span class="mt-1 flex justify-between gap-2"
+              ><span class="truncate text-sm text-stone-500"
+                >{{conversation.messages?.at(-1)?.text ||
+                conversation.messages?.at(-1)?.attachment?.filename || 'Start a
+                conversation'}}</span
+              >@if(unreadCount(conversation)){<b
+                class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-600 text-[10px] text-white"
+                >{{unreadCount(conversation)}}</b
+              >}</span
+            ><small
+              class="mt-1 block truncate text-[11px]"
+              [class.text-green-600]="participantOnline(conversation)"
+              [class.text-gray-500]="!participantOnline(conversation)"
+              >{{participantStatus(conversation)}}</small
+            ></span
+          ></button
+        >} @empty {
+        <p class="p-4 text-sm text-stone-500">No conversations match.</p>
+        }
+      </div>
+      <div class="flex items-center justify-between border-t border-stone-200 p-4 text-xs">
+        <span class="flex items-center gap-2"
+          ><i
+            class="size-2 rounded-full"
+            [class.bg-emerald-500]="activeStatus"
+            [class.bg-stone-400]="!activeStatus"
+          ></i
+          >{{activeStatus ? 'Your active status is on' : 'Your active status is off'}}</span
+        ><button class="font-medium text-blue-700" (click)="setActiveStatus(!activeStatus)">
+          Turn {{activeStatus ? 'off' : 'on'}}
+        </button>
+      </div>
+    </aside>
+    <main
+      class="flex min-h-0 min-w-0 flex-col overflow-hidden"
+      [class.hidden]="!selected"
+      [class.md:flex]="!selected"
+    >
+      @if(selected){
+      <header class="flex shrink-0 items-center gap-3 border-b border-stone-200 p-5">
+        <button
+          class="mr-1 text-stone-500 md:hidden"
+          aria-label="Back to conversations"
+          (click)="selected=null"
+        >
+          ←</button
+        ><span
+          class="relative grid size-12 place-items-center rounded-full bg-blue-100 font-semibold text-blue-700"
+          >{{conversationTitle(selected).slice(0,1).toUpperCase()}}<i
+            class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-white"
+            [class.bg-green-500]="participantOnline(selected)"
+            [class.bg-gray-400]="!participantOnline(selected)"
+          ></i
+        ></span>
+        <div>
+          <h2 class="font-semibold">{{conversationTitle(selected)}}</h2>
+          <p
+            class="text-xs"
+            [class.text-green-600]="participantOnline(selected)"
+            [class.text-gray-500]="!participantOnline(selected)"
+          >
+            {{participantStatus(selected)}}
+          </p>
+        </div>
+      </header>
+      <div class="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-8">
+        @for(message of selected.messages || []; track message._id){
+        <div class="flex" [class.justify-end]="isOwnMessage(message)">
+          <div
+            class="max-w-[78%] rounded-2xl px-4 py-3"
+            [class.rounded-br-md]="isOwnMessage(message)"
+            [class.bg-blue-600]="isOwnMessage(message)"
+            [class.text-white]="isOwnMessage(message)"
+            [class.bg-stone-100]="!isOwnMessage(message)"
+          >
+            <p class="text-sm whitespace-pre-wrap">{{message.text}}</p>
+            @if(message.attachment){<button
+              class="mt-2 block max-w-full rounded-xl border border-current/20 px-3 py-2 text-left text-sm underline"
+              (click)="download(message)"
+            >
+              {{message.attachment.mimeType.startsWith('image/') ? 'Image' : 'PDF'}} ·
+              {{message.attachment.filename}} · {{(message.attachment.size/1024/1024).toFixed(1)}}
+              MB</button
+            >}
+            <p class="mt-2 text-right text-[10px] opacity-70">
+              {{messageDate(message)}}{{isOwnMessage(message) && message.readAt ? ' · Seen' : ''}}
+            </p>
           </div>
+        </div>
+        }
+      </div>
+      @if(error){
+      <p class="shrink-0 px-5 py-2 text-sm text-red-700">{{error}}</p>
+      }
+      <form
+        class="flex shrink-0 items-center gap-2 border-t border-stone-200 p-4 sm:p-5"
+        (ngSubmit)="send()"
+      >
+        <label
+          class="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-stone-100 text-lg text-blue-700"
+          title="Attach image or PDF"
+          >＋<input
+            class="hidden"
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
+            (change)="chooseFile($event)" /></label
+        ><input
+          class="min-w-0 flex-1 rounded-full bg-stone-100 px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200"
+          [(ngModel)]="text"
+          name="message"
+          placeholder="Write a message…"
+        /><button
+          class="grid size-11 shrink-0 place-items-center rounded-full bg-blue-600 text-white"
+          aria-label="Send message"
+        >
+          ➤
+        </button>
+      </form>
+      } @else {
+      <div class="grid flex-1 place-items-center p-8 text-center text-stone-500">
+        <div>
+          <p class="text-lg font-semibold text-stone-700">Your messages</p>
+          <p class="mt-2 text-sm">Choose a company or project conversation to continue.</p>
         </div>
       </div>
       }
-    </div>
-    @if (selected) {
-    <form class="flex gap-2 border-t border-stone-100 p-4" (ngSubmit)="send()">
-      <input
-        class="flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm"
-        [(ngModel)]="text"
-        name="message"
-        placeholder="Write a message..."
-      /><button class="rounded-xl bg-[#0a66c2] px-4 py-2 text-sm text-white">Send</button>
-    </form>
-    }
-  </main>
+    </main>
+  </div>
 </section>
