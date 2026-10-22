@@ -15,8 +15,9 @@
       ><button
         class="rounded-xl bg-[#2864dc] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e55c0]"
         (click)="downloadResume()"
+        [disabled]="downloading"
       >
-        ⇩ Download résumé
+        {{ downloading ? 'Preparing PDF…' : '⇩ Download résumé' }}
       </button>
     </div>
   </div>
@@ -26,6 +27,183 @@
     class="mb-5 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 print:hidden"
   >
     <span>{{ notice }}</span><button (click)="notice = ''">×</button>
+  </div>
+  }
+
+  <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm print:hidden">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="font-semibold">Choose your CV design</h2>
+        <p class="mt-1 text-sm text-slate-500">
+          Select a design to choose it, then preview the PDF before downloading.
+        </p>
+      </div>
+      @if (!templates.length) {
+      <p class="text-xs text-slate-400">Loading designs…</p>
+      }
+    </div>
+    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+      @for (template of templates; track template.id) {
+      <button
+        type="button"
+        class="rounded-xl border p-3 text-left transition hover:bg-slate-50"
+        [class.border-[#2864dc]]="selectedTemplate === template.id"
+        [class.ring-2]="selectedTemplate === template.id"
+        [class.ring-[#2864dc]/15]="selectedTemplate === template.id"
+        [class.border-slate-200]="selectedTemplate !== template.id"
+        [attr.aria-pressed]="selectedTemplate === template.id"
+        (click)="selectTemplate(template.id)"
+      >
+        <div class="mb-3 h-16 overflow-hidden rounded-lg border border-slate-100 bg-white">
+          @if (template.id === 'modern') {
+          <div class="h-5 px-2 py-1" [style.backgroundColor]="template.accent">
+            <span class="block h-1.5 w-1/3 rounded bg-white/90"></span>
+          </div>
+          <div class="space-y-1.5 p-2">
+            <span class="block h-1 w-2/3 rounded" [style.backgroundColor]="template.accent"></span>
+            <span class="block h-1 w-full rounded bg-slate-200"></span>
+          </div>
+          } @else if (template.id === 'classic') {
+          <div class="px-3 pt-2 text-center">
+            <span class="mx-auto block h-1.5 w-1/3 rounded bg-slate-600"></span>
+            <span
+              class="mx-auto mt-1.5 block h-px w-full"
+              [style.backgroundColor]="template.accent"
+            ></span>
+            <div class="mt-2 space-y-1">
+              <span class="mx-auto block h-1 w-4/5 rounded bg-slate-200"></span>
+              <span class="mx-auto block h-1 w-2/3 rounded bg-slate-200"></span>
+            </div>
+          </div>
+          } @else {
+          <div class="flex h-full">
+            <div class="w-1.5" [style.backgroundColor]="template.accent"></div>
+            <div class="flex-1 space-y-2 p-3">
+              <span
+                class="block h-1.5 w-1/3 rounded"
+                [style.backgroundColor]="template.accent"
+              ></span>
+              <span class="block h-1 w-full rounded bg-slate-200"></span>
+              <span class="block h-1 w-4/5 rounded bg-slate-200"></span>
+              <span class="block h-1 w-1/2 rounded bg-slate-200"></span>
+            </div>
+          </div>
+          }
+        </div>
+        <span class="block text-sm font-semibold">{{ template.name }}</span>
+        <span class="mt-1 block text-xs leading-5 text-slate-500">{{ template.description }}</span>
+      </button>
+      }
+    </div>
+  </section>
+
+  @if (previewOpen) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3 sm:p-6"
+    (click)="closePreview()"
+    (keydown.escape)="closePreview()"
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cv-preview-title"
+      class="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h2 id="cv-preview-title" class="font-semibold">Choose a CV design</h2>
+          <p class="mt-1 text-xs text-slate-500">
+            {{ selectedTemplate | titlecase }} selected · Choose another design below if needed.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100"
+          (click)="closePreview()"
+          aria-label="Close preview"
+        >
+          Close ✕
+        </button>
+      </header>
+      <div class="border-b border-slate-200 px-5 py-3">
+        <div class="flex flex-wrap gap-2">
+          @for (template of templates; track template.id) {
+          <button
+            type="button"
+            (click)="selectTemplate(template.id)"
+            [attr.aria-pressed]="selectedTemplate === template.id"
+            class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+            [class.border-[#2864dc]]="selectedTemplate === template.id"
+            [class.bg-blue-50]="selectedTemplate === template.id"
+            [class.text-[#2864dc]]="selectedTemplate === template.id"
+            [class.border-slate-200]="selectedTemplate !== template.id"
+          >
+            {{ template.name }}
+          </button>
+          }
+          <button
+            type="button"
+            (click)="loadPreview()"
+            [disabled]="previewLoading"
+            class="ml-auto rounded-lg bg-[#2864dc] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {{ previewLoading ? 'Preparing…' : previewRequested ? 'Refresh preview' : 'Preview
+            selected design' }}
+          </button>
+        </div>
+      </div>
+      <div class="min-h-[60vh] flex-1 bg-slate-100 p-3 sm:p-5">
+        @if (previewLoading) {
+        <div class="grid h-[65vh] place-items-center text-sm text-slate-500">
+          Preparing your preview…
+        </div>
+        } @else if (previewError) {
+        <div class="grid h-[65vh] place-items-center text-center text-sm text-rose-700">
+          {{ previewError }}
+        </div>
+        } @else if (previewSrc) {
+        <div class="h-[65vh]">
+          <iframe
+            [src]="previewSrc"
+            title="CV PDF preview"
+            class="h-full w-full rounded-lg border border-slate-200 bg-white"
+          ></iframe>
+        </div>
+        @if (previewDocumentUrl) {
+        <p class="mt-2 text-right text-xs">
+          <a
+            [href]="previewDocumentUrl"
+            target="_blank"
+            rel="noopener"
+            class="font-medium text-[#2864dc] underline"
+            >Open PDF in a new tab</a
+          >
+        </p>
+        } } @else {
+        <div class="grid h-[65vh] place-items-center text-center text-sm text-slate-500">
+          Choose a design above, then select <strong>Preview selected design</strong>.
+        </div>
+        }
+      </div>
+      <footer class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+        <button
+          type="button"
+          class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+          (click)="closePreview()"
+        >
+          Close
+        </button>
+        <button
+          type="button"
+          class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1e55c0]"
+          (click)="downloadResume()"
+          [disabled]="downloading"
+        >
+          {{ downloading ? 'Preparing PDF…' : 'Download this design' }}
+        </button>
+      </footer>
+    </section>
   </div>
   }
 
@@ -431,12 +609,13 @@
       </section>
       <section class="rounded-2xl bg-[#eaf1ff] p-5 shadow-sm print:hidden">
         <p class="text-sm font-semibold">Your résumé</p>
-        <p class="mt-1 text-xs text-slate-500">Ready to save or print as a PDF.</p>
+        <p class="mt-1 text-xs text-slate-500">Download your CV in the selected design.</p>
         <button
           class="mt-4 w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#2864dc] shadow-sm"
           (click)="downloadResume()"
+          [disabled]="downloading"
         >
-          ⇩ Download PDF
+          {{ downloading ? 'Preparing PDF…' : '⇩ Download PDF' }}
         </button>
       </section>
     </aside>

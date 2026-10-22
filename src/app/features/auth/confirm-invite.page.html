@@ -1,0 +1,61 @@
+<main class="grid min-h-screen place-items-center bg-stone-50 p-5">
+  <section class="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
+    <div class="text-xs font-semibold tracking-[.18em] text-[#5e8fc4]">
+      WORKPATH EMPLOYEE INVITE
+    </div>
+    @if (complete) {
+    <h1 class="mt-3 text-2xl font-semibold">Email confirmed</h1>
+    <p class="mt-2 text-sm text-stone-600">
+      Your account is ready. Sign in with the password you just created.
+    </p>
+    <button
+      type="button"
+      class="mt-6 w-full rounded-xl bg-[#0a66c2] px-5 py-3 font-medium text-white"
+      (click)="goToLogin()"
+    >
+      Go to sign in
+    </button>
+    } @else {
+    <h1 class="mt-3 text-2xl font-semibold">Confirm your employee account</h1>
+    <p class="mt-2 text-sm text-stone-600">
+      Choose a password to confirm your email and activate your account.
+    </p>
+    <form class="mt-6 space-y-4" (ngSubmit)="submit()">
+      <label class="block text-sm font-medium text-stone-700">
+        Password
+        <input
+          class="profile-input mt-1 w-full"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          minlength="8"
+          maxlength="200"
+          autocomplete="new-password"
+          required
+        />
+      </label>
+      <label class="block text-sm font-medium text-stone-700">
+        Confirm password
+        <input
+          class="profile-input mt-1 w-full"
+          type="password"
+          name="confirmPassword"
+          [(ngModel)]="confirmPassword"
+          autocomplete="new-password"
+          required
+        />
+      </label>
+      @if (error) {
+      <p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{{ error }}</p>
+      }
+      <button
+        type="submit"
+        [disabled]="busy || !token"
+        class="w-full rounded-xl bg-[#0a66c2] px-5 py-3 font-medium text-white disabled:opacity-60"
+      >
+        {{ busy ? 'Confirming…' : 'Confirm email and set password' }}
+      </button>
+    </form>
+    }
+  </section>
+</main>

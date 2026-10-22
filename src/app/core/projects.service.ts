@@ -11,6 +11,7 @@ export type Project = {
   pageName?: string;
   id: string;
   title: string;
+  location?: string;
   summary: string;
   details: string;
   category: string;

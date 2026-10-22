@@ -22,6 +22,8 @@ import { ProjectDetailPage } from '../projects/project-detail.page';
       { path: ':pageId/projects/:projectId', component: CompaniesPage },
       { path: ':pageId/projects', component: CompaniesPage },
       { path: ':pageId/jobs', component: CompaniesPage },
+      { path: ':pageId/groups', component: CompaniesPage },
+      { path: ':pageId/groups/:groupId', component: CompaniesPage },
       { path: ':pageId/settings', component: CompaniesPage },
       { path: ':pageId/messages', component: CompaniesPage },
       { path: ':pageId', component: CompaniesPage },

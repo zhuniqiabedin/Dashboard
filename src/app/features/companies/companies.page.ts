@@ -1,6 +1,6 @@
 import { parseSkills } from '../jobs/job-matching';
 import { Component, effect, Signal, signal, WritableSignal } from '@angular/core';
-import { CompaniesService, PageJob } from '../../core/companies.service';
+import { CompaniesService, Company, PageJob } from '../../core/companies.service';
 import { PostalLocationService } from '../../core/postal-location.service';
 import { AuthService } from '../../core/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -50,16 +50,26 @@ export class CompaniesPage {
   readonly locationLookupError: WritableSignal<string>;
   companyDialog = false;
   employeeEmail = '';
+  newEmployeeName = '';
+  newEmployeeEmail = '';
+  newEmployeeGroupId = '';
+  newEmployeeRoles = ['member'];
+  employeeInviteNotice = '';
   employeeRole = 'member';
   employeeRoles = ['member'];
+  employeeGroupId = '';
+  companyGroupName = '';
+  readonly groupNameDrafts: Record<string, string> = {};
   selected = '';
   notice = '';
   selectedCompanyId = '';
-  selectedSection: 'overview' | 'jobs' | 'projects' | 'roles' | 'employees' | 'settings' =
-    'overview';
+  selectedSection:
+    'overview' | 'jobs' | 'projects' | 'roles' | 'employees' | 'settings' | 'groups' = 'overview';
+  selectedGroupId = '';
   selectedPageTab: 'posts' | 'about' | 'photos' | 'reviews' | 'more' = 'posts';
   pageNotice = 'Your company page is live';
   projectTitle = '';
+  projectLocation = '';
   projectSummary = '';
   readonly applicantJobId = signal('');
   readonly applicantsLoading = signal(false);
@@ -133,9 +143,15 @@ export class CompaniesPage {
         this.selectCompany(pageId, false);
         this.selectedProjectId = params.get('projectId') ?? '';
         const section = this.route.snapshot.url.find((segment) =>
-          ['jobs', 'projects', 'settings', 'messages'].includes(segment.path),
+          ['jobs', 'projects', 'settings', 'messages', 'groups'].includes(segment.path),
         )?.path;
-        if (section === 'jobs' || section === 'projects' || section === 'settings')
+        this.selectedGroupId = params.get('groupId') ?? '';
+        if (
+          section === 'jobs' ||
+          section === 'projects' ||
+          section === 'settings' ||
+          section === 'groups'
+        )
           this.selectedSection = section;
         else if (section === 'messages') {
           this.selectedSection = 'employees';
@@ -376,9 +392,74 @@ export class CompaniesPage {
   }
   addEmployee(): void {
     if (!this.selected || !this.employeeEmail.trim()) return;
-    this.service.addEmployee(this.selected, this.employeeEmail.trim(), this.employeeRoles);
+    this.service.addEmployee(
+      this.selected,
+      this.employeeEmail.trim(),
+      this.employeeRoles,
+      this.employeeGroupId || undefined,
+    );
     this.employeeEmail = '';
+    this.employeeGroupId = '';
     this.notice = 'Employee added.';
+  }
+  createEmployee(companyId: string): void {
+    if (!this.newEmployeeName.trim() || !this.newEmployeeEmail.trim()) return;
+    this.employeeInviteNotice = '';
+    this.service.createEmployee(
+      companyId,
+      this.newEmployeeName.trim(),
+      this.newEmployeeEmail.trim(),
+      this.newEmployeeRoles,
+      this.newEmployeeGroupId || undefined,
+      () => {
+        this.newEmployeeName = '';
+        this.newEmployeeEmail = '';
+        this.newEmployeeGroupId = '';
+        this.newEmployeeRoles = ['member'];
+        this.employeeInviteNotice = 'Employee created. A confirmation email has been sent.';
+      },
+    );
+  }
+  createCompanyGroup(companyId: string): void {
+    if (!this.companyGroupName.trim()) return;
+    this.service.createGroup(companyId, this.companyGroupName.trim());
+    this.companyGroupName = '';
+  }
+  beginGroupRename(group: { _id: string; name: string }): void {
+    this.groupNameDrafts[group._id] = group.name;
+  }
+  saveGroupRename(companyId: string, groupId: string): void {
+    const name = this.groupNameDrafts[groupId]?.trim();
+    if (!name) return;
+    this.service.renameGroup(companyId, groupId, name);
+    delete this.groupNameDrafts[groupId];
+  }
+  cancelGroupRename(groupId: string): void {
+    delete this.groupNameDrafts[groupId];
+  }
+  deleteCompanyGroup(companyId: string, group: { _id: string; name: string }): void {
+    if (window.confirm(`Delete the “${group.name}” group? Employees in it will become unassigned.`))
+      this.service.deleteGroup(companyId, group._id);
+  }
+  employeeGroupFor(employee: { groupId?: string | null }): string {
+    return employee.groupId ?? '';
+  }
+  groupEmployeeCount(company: Pick<Company, 'employees'>, groupId: string): number {
+    return this.groupEmployees(company, groupId).length;
+  }
+  groupEmployees(company: Pick<Company, 'employees'>, groupId: string) {
+    return (company.employees ?? []).filter(
+      (employee) => this.employeeGroupFor(employee) === groupId,
+    );
+  }
+  employeeGroupName(employee: { groupId?: string | null }): string {
+    return (
+      this.selectedCompany?.groups?.find((group) => group._id === employee.groupId)?.name ??
+      'No group'
+    );
+  }
+  assignEmployeeToGroup(companyId: string, employeeId: string, groupId: string): void {
+    this.service.setEmployeeGroup(companyId, employeeId, groupId || null);
   }
   updateEmployeeRole(companyId: string, employeeId: string, roles: string[]): void {
     this.service.updateEmployeeRole(companyId, employeeId, roles);
@@ -391,12 +472,14 @@ export class CompaniesPage {
     this.service.createProject({
       pageId: companyId,
       title: this.projectTitle.trim(),
+      location: this.projectLocation.trim(),
       summary: this.projectSummary.trim(),
       category: 'Company project',
       branch: 'Other',
       startDate: new Date().toISOString(),
     });
     this.projectTitle = '';
+    this.projectLocation = '';
     this.projectSummary = '';
     this.pageNotice = 'Project created for this page.';
   }
@@ -526,9 +609,17 @@ export class CompaniesPage {
     if (this.selectedCompanyId)
       this.router.navigate(['/companies', this.selectedCompanyId, 'settings']);
   }
+  openPageGroups(): void {
+    if (this.selectedCompanyId)
+      this.router.navigate(['/companies', this.selectedCompanyId, 'groups']);
+  }
   openPageInbox(): void {
     if (this.selectedCompanyId)
       this.router.navigate(['/companies', this.selectedCompanyId, 'messages']);
+  }
+  openCompanyGroup(groupId: string): void {
+    if (this.selectedCompanyId)
+      this.router.navigate(['/companies', this.selectedCompanyId, 'groups', groupId]);
   }
   closeProjectDialog(): void {
     this.projectDialog = false;
@@ -536,5 +627,13 @@ export class CompaniesPage {
   }
   get selectedCompany() {
     return this.companies().find((company) => company._id === this.selectedCompanyId);
+  }
+  get activeCompanyGroup() {
+    return this.selectedCompany?.groups?.find((group) => group._id === this.selectedGroupId);
+  }
+  get activeGroupEmployees() {
+    return (this.selectedCompany?.employees ?? []).filter(
+      (employee) => this.employeeGroupFor(employee) === this.selectedGroupId,
+    );
   }
 }

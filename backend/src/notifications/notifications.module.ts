@@ -5,5 +5,18 @@ import { Company, CompanySchema } from '../companies/company.schema';
 import { Notification, NotificationSchema } from './notification.schema';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
-@Module({ imports: [AuthModule, MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }, { name: Company.name, schema: CompanySchema }])], controllers: [NotificationsController], providers: [NotificationsService], exports: [NotificationsService] })
+import { CalendarEvent, CalendarEventSchema } from '../calendar-events/calendar-event.schema';
+@Module({
+  imports: [
+    AuthModule,
+    MongooseModule.forFeature([
+      { name: Notification.name, schema: NotificationSchema },
+      { name: Company.name, schema: CompanySchema },
+      { name: CalendarEvent.name, schema: CalendarEventSchema },
+    ]),
+  ],
+  controllers: [NotificationsController],
+  providers: [NotificationsService],
+  exports: [NotificationsService],
+})
 export class NotificationsModule {}

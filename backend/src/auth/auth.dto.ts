@@ -6,3 +6,8 @@ export class AuthDto {
 export class RegisterDto extends AuthDto {
   name!: string;
 }
+
+export class ConfirmInviteDto {
+  token!: string;
+  password!: string;
+}

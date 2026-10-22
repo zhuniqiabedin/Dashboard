@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "career-space": {
+    "workpath": {
       "projectType": "application",
       "root": "",
       "sourceRoot": "src",
@@ -35,8 +35,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": { "buildTarget": "career-space:build:production" },
-            "development": { "buildTarget": "career-space:build:development" }
+            "production": { "buildTarget": "workpath:build:production" },
+            "development": { "buildTarget": "workpath:build:development" }
           },
           "defaultConfiguration": "development"
         }

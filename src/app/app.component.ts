@@ -139,6 +139,10 @@ export class AppComponent implements OnDestroy {
       )
       .subscribe();
     this.notificationsOpen = false;
+    if (item.type === 'event_reminder') {
+      void this.router.navigate(['/calendar']);
+      return;
+    }
     void this.router.navigate(
       ['/companies', item.pageId, item.type === 'job_application' ? 'jobs' : 'projects'],
       { queryParams: { applicants: item.itemId } },
@@ -199,7 +203,7 @@ export class AppComponent implements OnDestroy {
         this.busy = false;
         this.notice =
           error.error?.message ||
-          'Could not connect to the server. Make sure the Career Space API is running.';
+          'Could not connect to the server. Make sure the Workpath API is running.';
         this.changeDetector.markForCheck();
       },
     });

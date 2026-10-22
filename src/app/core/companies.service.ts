@@ -13,15 +13,18 @@ export type Company = {
   logo?: string;
   employeeIds: string[];
   projectIds: string[];
+  groups?: { _id: string; name: string }[];
   jobs?: string[];
   employees?: {
     userId: string | { name?: string; email?: string };
+    groupId?: string | null;
     role: 'owner' | 'admin' | 'recruiter' | 'hr' | 'member';
     roles?: ('owner' | 'admin' | 'recruiter' | 'hr' | 'member')[];
   }[];
 };
 export type PageProject = {
   title: string;
+  location?: string;
   summary: string;
   category: string;
   branch: string;
@@ -73,16 +76,87 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not create company.'),
       });
   }
-  addEmployee(id: string, email: string, roles: string[] = ['member']): void {
+  addEmployee(id: string, email: string, roles: string[] = ['member'], groupId?: string): void {
     this.http
       .post(
         `${environment.apiUrl}/companies/${id}/employees`,
-        { email, roles },
+        { email, roles, ...(groupId ? { groupId } : {}) },
         { headers: this.headers() },
       )
       .subscribe({
         next: () => this.load(),
         error: (error) => this.error.set(error.error?.message || 'Could not add employee.'),
+      });
+  }
+  createEmployee(
+    id: string,
+    name: string,
+    email: string,
+    roles: string[] = ['member'],
+    groupId?: string,
+    onSent?: () => void,
+  ): void {
+    this.error.set('');
+    this.saving.set(true);
+    this.http
+      .post(
+        `${environment.apiUrl}/companies/${id}/employees/invite`,
+        { name, email, roles, ...(groupId ? { groupId } : {}) },
+        { headers: this.headers() },
+      )
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.load();
+          onSent?.();
+        },
+        error: (error) =>
+          this.error.set(
+            error.error?.message || 'Could not create employee or send confirmation email.',
+          ),
+      });
+  }
+  createGroup(id: string, name: string): void {
+    this.http
+      .post(`${environment.apiUrl}/companies/${id}/groups`, { name }, { headers: this.headers() })
+      .subscribe({
+        next: () => this.load(),
+        error: (error) => this.error.set(error.error?.message || 'Could not create group.'),
+      });
+  }
+  renameGroup(id: string, groupId: string, name: string): void {
+    this.http
+      .patch(
+        `${environment.apiUrl}/companies/${id}/groups/${groupId}`,
+        { name },
+        { headers: this.headers() },
+      )
+      .subscribe({
+        next: () => this.load(),
+        error: (error) => this.error.set(error.error?.message || 'Could not rename group.'),
+      });
+  }
+  deleteGroup(id: string, groupId: string): void {
+    this.http
+      .delete(`${environment.apiUrl}/companies/${id}/groups/${groupId}`, {
+        headers: this.headers(),
+      })
+      .subscribe({
+        next: () => this.load(),
+        error: (error) => this.error.set(error.error?.message || 'Could not delete group.'),
+      });
+  }
+  setEmployeeGroup(id: string, employeeId: string, groupId: string | null): void {
+    this.http
+      .patch(
+        `${environment.apiUrl}/companies/${id}/employees/${employeeId}/group`,
+        { groupId },
+        { headers: this.headers() },
+      )
+      .subscribe({
+        next: () => this.load(),
+        error: (error) =>
+          this.error.set(error.error?.message || 'Could not update employee group.'),
       });
   }
   updateEmployeeRole(id: string, employeeId: string, roles: string[]): void {

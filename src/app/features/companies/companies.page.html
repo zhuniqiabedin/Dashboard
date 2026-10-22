@@ -213,9 +213,16 @@
   </form>
 </div>
 } } @else if (selectedCompany; as company) {
-<div class="flex min-h-[calc(100vh-72px)] bg-[#f1f4f8]">
+<div
+  class="flex bg-[#f1f4f8]"
+  [ngClass]="
+    selectedSection === 'jobs'
+      ? 'h-[calc(100dvh-72px)] overflow-hidden'
+      : 'min-h-[calc(100vh-72px)]'
+  "
+>
   <aside
-    class="sticky top-[72px] z-10 flex h-[calc(100vh-72px)] w-[248px] shrink-0 flex-col self-start overflow-hidden border-r border-stone-200 bg-white px-4 py-5"
+    class="sticky top-[72px] z-10 flex h-[calc(100vh-72px)] w-[248px] shrink-0 flex-col self-start overflow-y-auto border-r border-stone-200 bg-white px-4 py-5"
   >
     <button
       class="mb-7 flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-medium text-stone-500 hover:bg-stone-50"
@@ -238,17 +245,55 @@
     </div>
     <nav class="space-y-1" aria-label="Company navigation">
       @for (item of [{key:'overview',label:'Page
-      home',icon:'⌂'},{key:'jobs',label:'Jobs',icon:'◫'},{key:'projects',label:'Projects',icon:'▤'},{key:'employees',label:'Inbox',icon:'◯'},{key:'roles',label:'Insights',icon:'⌁'},{key:'settings',label:'Page
+      home',icon:'⌂'},{key:'jobs',label:'Jobs',icon:'◫'},{key:'projects',label:'Projects',icon:'▤'},{key:'employees',label:'Inbox',icon:'◯'},{key:'roles',label:'Insights',icon:'⌁'},{key:'groups',label:'Groups',icon:'▦'},{key:'settings',label:'Page
       settings',icon:'⚙'}]; track item.key) {
       <button
         class="nav-item w-full"
         [class.nav-active]="selectedSection === item.key"
-        (click)="item.key === 'overview' ? openPageHome() : item.key === 'projects' ? openPageProjects() : item.key === 'jobs' ? openPageJobs() : item.key === 'settings' ? openPageSettings() : item.key === 'employees' ? openPageInbox() : selectedSection = $any(item.key)"
+        (click)="item.key === 'overview' ? openPageHome() : item.key === 'projects' ? openPageProjects() : item.key === 'jobs' ? openPageJobs() : item.key === 'settings' ? openPageSettings() : item.key === 'groups' ? openPageGroups() : item.key === 'employees' ? openPageInbox() : selectedSection = $any(item.key)"
       >
         <span>{{ item.icon }}</span>{{ item.label }}
       </button>
       }
     </nav>
+    <div class="mt-6 border-t border-stone-200 pt-5">
+      <div class="mb-2 flex items-center justify-between px-3">
+        <span class="text-[10px] font-semibold tracking-[.16em] text-stone-400">GROUPS</span>
+        <button
+          type="button"
+          class="text-xs font-medium text-[#2864dc] hover:underline"
+          (click)="openPageGroups()"
+          aria-label="Manage company groups"
+          title="Manage groups"
+        >
+          ＋
+        </button>
+      </div>
+      <nav class="space-y-1" aria-label="Company groups">
+        @for (group of company.groups || []; track group._id) {
+        <button
+          type="button"
+          class="nav-item w-full truncate"
+          [class.nav-active]="selectedSection === 'groups' && selectedGroupId === group._id"
+          [attr.aria-current]="selectedSection === 'groups' && selectedGroupId === group._id ? 'page' : null"
+          (click)="openCompanyGroup(group._id)"
+        >
+          <span>▦</span>{{ group.name }}
+          <span class="ml-auto text-xs text-stone-400"
+            >{{ groupEmployeeCount(company, group._id) }}</span
+          >
+        </button>
+        } @empty {
+        <button
+          type="button"
+          class="px-3 py-2 text-left text-xs text-stone-500 hover:text-[#2864dc]"
+          (click)="openPageGroups()"
+        >
+          Create your first group
+        </button>
+        }
+      </nav>
+    </div>
     <div class="mt-6 border-t border-stone-200 pt-5">
       <div class="mb-3 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">
         EMPLOYEES
@@ -293,9 +338,21 @@
       projects
     </div>
   </aside>
-  <div class="min-w-0 flex-1">
-    <div class="mx-auto max-w-[1600px] px-5 py-6 sm:px-8 lg:px-10">
-      <div class="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+  <div
+    class="min-w-0 flex-1"
+    [ngClass]="selectedSection === 'jobs' ? 'min-h-0 overflow-hidden' : ''"
+  >
+    <div
+      [ngClass]="
+        selectedSection === 'jobs'
+          ? 'mx-auto flex h-full min-h-0 max-w-[1600px] flex-col px-5 py-6 sm:px-8 lg:px-10'
+          : 'mx-auto max-w-[1600px] px-5 py-6 sm:px-8 lg:px-10'
+      "
+    >
+      <div
+        class="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm"
+        [class.shrink-0]="selectedSection === 'jobs'"
+      >
         <div class="flex items-center gap-2 text-stone-500">
           <span>⚑</span
           ><button (click)="leaveCompany()" class="hover:text-[#2864dc]">Company pages</button
@@ -543,7 +600,7 @@
       } @else {
       <app-projects-page [pageId]="company._id"></app-projects-page>
       } } @else if (selectedSection === 'jobs') {
-      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+      <section class="shrink-0 rounded-2xl border border-stone-200 bg-white p-6">
         <h1 class="text-2xl font-semibold">Jobs</h1>
         <p class="mt-1 text-sm text-stone-500">Publish jobs for {{ company.name }}.</p>
         <button
@@ -555,84 +612,91 @@
         </button>
       </section>
       @if (error() && !jobDialog()) {
-      <p class="mt-4 text-sm text-red-700" role="alert">{{ error() }}</p>
+      <p class="mt-4 shrink-0 text-sm text-red-700" role="alert">{{ error() }}</p>
       }
-      <section class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Company jobs">
+      <section
+        class="mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
+        aria-label="Company jobs"
+      >
         @if (jobsLoading()) {
         <p class="text-sm text-stone-500">Loading jobs…</p>
         } @else if (jobsError()) {
         <p class="text-sm text-red-700" role="alert">{{ jobsError() }}</p>
-        } @else { @for (job of pageJobs(); track job._id) {
-        <article class="rounded-2xl border border-stone-200 bg-white p-5">
-          <div class="flex items-start justify-between gap-3">
-            <h2 class="font-semibold">{{ job.title }}</h2>
-            <span
-              class="rounded-full px-2.5 py-1 text-[10px] font-medium"
-              [class.bg-emerald-50]="job.isPublished"
-              [class.text-emerald-700]="job.isPublished"
-              [class.bg-stone-100]="!job.isPublished"
-              [class.text-stone-500]="!job.isPublished"
-              >{{ job.isPublished ? 'Published' : 'Unpublished' }}</span
-            >
-          </div>
-          <p class="mt-2 text-sm text-stone-500">
-            {{ job.location }} · {{ job.workplace || 'Onsite' }}
-          </p>
-          <p class="mt-2 text-sm font-medium">
-            {{ job.annualSalary || 0 | currency:'EUR':'symbol':'1.0-2' }} / year
-          </p>
-          <p class="mt-3 text-sm whitespace-pre-line text-stone-600">{{ job.description }}</p>
-          <div class="mt-4">
-            <h3 class="mb-2 text-xs font-semibold text-stone-600">Skills</h3>
-            <ul class="flex flex-wrap gap-2" aria-label="Job skills">
-              @for (skill of job.skills || []; track $index) {
-              <li
-                class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs font-medium break-words text-[#0a66c2]"
+        } @else {
+        <div class="grid content-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+          @for (job of pageJobs(); track job._id) {
+          <article class="rounded-2xl border border-stone-200 bg-white p-5">
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="font-semibold">{{ job.title }}</h2>
+              <span
+                class="rounded-full px-2.5 py-1 text-[10px] font-medium"
+                [class.bg-emerald-50]="job.isPublished"
+                [class.text-emerald-700]="job.isPublished"
+                [class.bg-stone-100]="!job.isPublished"
+                [class.text-stone-500]="!job.isPublished"
+                >{{ job.isPublished ? 'Published' : 'Unpublished' }}</span
               >
-                {{ skill }}
-              </li>
-              } @empty {
-              <li class="text-xs text-stone-400">No skills added yet.</li>
-              }
-            </ul>
-          </div>
-          <div class="mt-4 flex flex-wrap gap-4 border-t border-stone-100 pt-4 text-sm">
-            <button
-              type="button"
-              class="font-medium text-[#2864dc]"
-              (click)="viewJobApplicants(job._id)"
-            >
-              Applicants
-            </button>
-            <button
-              type="button"
-              class="font-medium text-[#2864dc]"
-              [disabled]="saving()"
-              (click)="openJobDialog(job)"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              class="font-medium text-[#2864dc]"
-              [disabled]="saving()"
-              (click)="toggleJobPublication(job)"
-            >
-              {{ job.isPublished ? 'Unpublish' : 'Publish' }}
-            </button>
-            <button
-              type="button"
-              class="text-red-600"
-              [disabled]="saving()"
-              (click)="deleteJob(job)"
-            >
-              Delete
-            </button>
-          </div>
-        </article>
-        } @empty {
-        <p class="text-sm text-stone-500">No jobs yet. Create your first company job above.</p>
-        } }
+            </div>
+            <p class="mt-2 text-sm text-stone-500">
+              {{ job.location }} · {{ job.workplace || 'Onsite' }}
+            </p>
+            <p class="mt-2 text-sm font-medium">
+              {{ job.annualSalary || 0 | currency:'EUR':'symbol':'1.0-2' }} / year
+            </p>
+            <p class="mt-3 text-sm whitespace-pre-line text-stone-600">{{ job.description }}</p>
+            <div class="mt-4">
+              <h3 class="mb-2 text-xs font-semibold text-stone-600">Skills</h3>
+              <ul class="flex flex-wrap gap-2" aria-label="Job skills">
+                @for (skill of job.skills || []; track $index) {
+                <li
+                  class="max-w-full rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs font-medium break-words text-[#0a66c2]"
+                >
+                  {{ skill }}
+                </li>
+                } @empty {
+                <li class="text-xs text-stone-400">No skills added yet.</li>
+                }
+              </ul>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-4 border-t border-stone-100 pt-4 text-sm">
+              <button
+                type="button"
+                class="font-medium text-[#2864dc]"
+                (click)="viewJobApplicants(job._id)"
+              >
+                Applicants
+              </button>
+              <button
+                type="button"
+                class="font-medium text-[#2864dc]"
+                [disabled]="saving()"
+                (click)="openJobDialog(job)"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="font-medium text-[#2864dc]"
+                [disabled]="saving()"
+                (click)="toggleJobPublication(job)"
+              >
+                {{ job.isPublished ? 'Unpublish' : 'Publish' }}
+              </button>
+              <button
+                type="button"
+                class="text-red-600"
+                [disabled]="saving()"
+                (click)="deleteJob(job)"
+              >
+                Delete
+              </button>
+            </div>
+          </article>
+          } @empty {
+          <p class="text-sm text-stone-500">No jobs yet. Create your first company job above.</p>
+          }
+        </div>
+        }
       </section>
       @if (applicantJobId()) {
       <div
@@ -1107,29 +1171,289 @@
           </main>
         </div>
       </section>
-      } @else if (selectedSection === 'settings') {
+      } @else if (selectedSection === 'groups') { @if (!selectedGroupId) {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        <h1 class="text-2xl font-semibold">Company groups</h1>
+        <p class="mt-1 text-sm text-stone-500">
+          Create and manage departments for {{ company.name }}.
+        </p>
+        @if (error()) {
+        <p class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {{ error() }}
+        </p>
+        }
+        <section
+          class="mt-6 rounded-2xl border border-stone-200 bg-stone-50/70 p-5"
+          aria-labelledby="company-groups-title"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="company-groups-title" class="text-lg font-semibold">Employee groups</h2>
+              <p class="mt-1 text-sm text-stone-500">
+                Create departments such as HR, Business Analysts, Developers, and Testers.
+              </p>
+            </div>
+          </div>
+          <form class="mt-4 flex flex-wrap gap-2" (ngSubmit)="createCompanyGroup(company._id)">
+            <input
+              class="profile-input min-w-[220px] flex-1"
+              [(ngModel)]="companyGroupName"
+              name="companyGroupName"
+              placeholder="New group name, e.g. Developers"
+              maxlength="80"
+              required
+            />
+            <button
+              type="submit"
+              class="rounded-xl bg-[#2864dc] px-4 py-2.5 text-sm font-semibold text-white"
+            >
+              ＋ Create group
+            </button>
+          </form>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            @for (group of company.groups || []; track group._id) {
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              @if (groupNameDrafts[group._id] !== undefined) {
+              <div class="flex gap-2">
+                <input
+                  class="profile-input min-w-0 flex-1"
+                  [(ngModel)]="groupNameDrafts[group._id]"
+                  [name]="'groupName-' + group._id"
+                  maxlength="80"
+                  aria-label="Group name"
+                />
+                <button
+                  type="button"
+                  class="text-sm font-medium text-[#2864dc]"
+                  (click)="saveGroupRename(company._id, group._id)"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  class="text-sm text-stone-500"
+                  (click)="cancelGroupRename(group._id)"
+                >
+                  Cancel
+                </button>
+              </div>
+              } @else {
+              <div class="flex items-center gap-2">
+                <h3 class="min-w-0 flex-1 truncate font-semibold">{{ group.name }}</h3>
+                <button
+                  type="button"
+                  class="text-xs font-medium text-[#2864dc] hover:underline"
+                  (click)="beginGroupRename(group)"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  class="text-xs text-red-600 hover:underline"
+                  (click)="deleteCompanyGroup(company._id, group)"
+                >
+                  Delete
+                </button>
+              </div>
+              }
+              <p class="mt-2 text-xs text-stone-500">
+                {{ groupEmployeeCount(company, group._id) }} employees
+              </p>
+              <div class="mt-3 space-y-2 border-t border-stone-100 pt-3">
+                @for (employee of groupEmployees(company, group._id); track
+                employeeId(employee.userId)) {
+                <div class="flex items-center gap-2 text-sm text-stone-700">
+                  <span
+                    class="grid size-6 shrink-0 place-items-center rounded-full bg-[#e8f3ff] text-[10px] font-semibold text-[#2864dc]"
+                  >
+                    {{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}
+                  </span>
+                  <span class="min-w-0 truncate">{{ creatorName(employee.userId) }}</span>
+                </div>
+                } @empty {
+                <p class="text-xs text-stone-400">No employees assigned</p>
+                }
+                <button
+                  type="button"
+                  class="pt-1 text-xs font-medium text-[#2864dc] hover:underline"
+                  (click)="openCompanyGroup(group._id)"
+                >
+                  View members →
+                </button>
+              </div>
+            </div>
+            } @empty {
+            <p class="text-sm text-stone-500 sm:col-span-2 xl:col-span-3">
+              No groups yet. Create your first department above.
+            </p>
+            }
+          </div>
+        </section>
+      </section>
+      } @else {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        @if (activeCompanyGroup; as group) {
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div class="text-[10px] font-semibold tracking-[.16em] text-[#2864dc]">
+              COMPANY GROUP
+            </div>
+            <h1 class="mt-2 text-2xl font-semibold">{{ group.name }}</h1>
+            <p class="mt-1 text-sm text-stone-500">
+              {{ groupEmployeeCount(company, group._id) }} employees in this group.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+            (click)="openPageGroups()"
+          >
+            Manage groups and employees
+          </button>
+        </div>
+        <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          @for (employee of activeGroupEmployees; track employeeId(employee.userId)) {
+          <article class="flex items-center gap-3 rounded-xl border border-stone-200 p-4">
+            <span
+              class="grid size-10 shrink-0 place-items-center rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#2864dc]"
+            >
+              {{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}
+            </span>
+            <div class="min-w-0">
+              <h2 class="truncate text-sm font-semibold">{{ creatorName(employee.userId) }}</h2>
+              <p class="mt-1 text-xs text-stone-500 capitalize">
+                {{ (employee.roles || [employee.role || 'member']).join(', ') }}
+              </p>
+            </div>
+          </article>
+          } @empty {
+          <p class="text-sm text-stone-500 sm:col-span-2 xl:col-span-3">
+            No employees are assigned to this group yet. Use Company settings to add or assign
+            employees.
+          </p>
+          }
+        </div>
+        } @else {
+        <h1 class="text-2xl font-semibold">Group not found</h1>
+        <p class="mt-2 text-sm text-stone-500">This group may have been removed.</p>
+        <button
+          type="button"
+          class="mt-4 text-sm font-medium text-[#2864dc] hover:underline"
+          (click)="openPageGroups()"
+        >
+          Manage company groups →
+        </button>
+        }
+      </section>
+      } } @else if (selectedSection === 'settings') {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">
         <h1 class="text-2xl font-semibold">Company settings</h1>
-        <p class="mt-1 text-sm text-stone-500">Manage employees and their roles.</p>
-        <div class="mt-5 space-y-3">
+        <p class="mt-1 text-sm text-stone-500">
+          Organize employees into teams and manage their roles.
+        </p>
+        @if (error()) {
+        <p class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {{ error() }}
+        </p>
+        }
+        <h2 class="mt-7 text-lg font-semibold">Employees and roles</h2>
+        <section class="mt-4 rounded-xl border border-stone-200 bg-stone-50/70 p-4">
+          <h3 class="font-semibold">Create a new employee</h3>
+          <p class="mt-1 text-xs text-stone-500">
+            We’ll create their account and email them a link to confirm their address and set a
+            password.
+          </p>
+          @if (employeeInviteNotice) {
+          <p class="mt-3 text-sm text-green-700" role="status">{{ employeeInviteNotice }}</p>
+          }
+          <form class="mt-4 grid gap-3 sm:grid-cols-2" (ngSubmit)="createEmployee(company._id)">
+            <input
+              class="profile-input"
+              [(ngModel)]="newEmployeeName"
+              name="newEmployeeName"
+              placeholder="Employee name"
+              autocomplete="name"
+              maxlength="120"
+              required
+            />
+            <input
+              class="profile-input"
+              [(ngModel)]="newEmployeeEmail"
+              name="newEmployeeEmail"
+              type="email"
+              placeholder="Employee email"
+              autocomplete="email"
+              required
+            />
+            <select class="profile-input" [(ngModel)]="newEmployeeGroupId" name="newEmployeeGroup">
+              <option value="">No group</option>
+              @for (group of company.groups || []; track group._id) {
+              <option [value]="group._id">{{ group.name }}</option>
+              }
+            </select>
+            <select
+              multiple
+              class="h-12 rounded-lg border border-stone-200 px-2 py-1 text-xs"
+              [(ngModel)]="newEmployeeRoles"
+              name="newEmployeeRoles"
+              aria-label="Employee roles"
+            >
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+              <option value="recruiter">Recruiter</option>
+              <option value="hr">HR</option>
+            </select>
+            <button
+              type="submit"
+              [disabled]="saving()"
+              class="w-fit rounded-xl bg-[#2864dc] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {{ saving() ? 'Creating employee…' : 'Create employee and send confirmation' }}
+            </button>
+          </form>
+        </section>
+        <div class="mt-4 space-y-3">
           @for (employee of (company.employees || []); track $index) {
-          <div class="flex items-center gap-3 rounded-xl border border-stone-100 p-3">
-            <span
-              class="flex size-9 items-center justify-center rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#2864dc]"
-              >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
-            ><b class="min-w-0 flex-1 truncate text-sm">{{ creatorName(employee.userId) }}</b
+          <div
+            class="grid gap-3 rounded-xl border border-stone-100 p-3 sm:grid-cols-[minmax(0,1fr)_180px_220px_auto] sm:items-center"
+          >
+            <span class="flex min-w-0 items-center gap-3"
+              ><span
+                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#2864dc]"
+                >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
+              ><span class="min-w-0"
+                ><b class="block truncate text-sm">{{ creatorName(employee.userId) }}</b
+                ><small class="mt-1 block text-xs text-stone-500"
+                  >{{ employeeGroupName(employee) }}</small
+                ></span
+              ></span
             ><select
+              class="profile-input"
+              [ngModel]="employeeGroupFor(employee)"
+              [name]="'employeeGroup-' + employeeId(employee.userId)"
+              aria-label="Employee group"
+              (ngModelChange)="assignEmployeeToGroup(company._id, employeeId(employee.userId), $event)"
+            >
+              <option value="">No group</option>
+              @for (group of company.groups || []; track group._id) {
+              <option [value]="group._id">{{ group.name }}</option>
+              }
+            </select>
+            <select
               multiple
               class="h-20 rounded-lg border border-stone-200 px-2 py-2 text-xs"
               [ngModel]="employee.roles || [employee.role || 'member']"
+              [name]="'employeeRoles-' + employeeId(employee.userId)"
               (ngModelChange)="updateEmployeeRole(company._id, employeeId(employee.userId), $event)"
             >
               <option value="owner">Owner</option>
               <option value="admin">Admin</option>
               <option value="recruiter">Recruiter</option>
               <option value="hr">HR</option>
-              <option value="member">Member</option></select
-            ><button
+              <option value="member">Member</option>
+            </select>
+            <button
+              type="button"
               class="text-xs text-red-600"
               (click)="removeEmployee(company._id, employeeId(employee.userId))"
             >
@@ -1140,12 +1464,27 @@
           <p class="text-sm text-stone-500">No employees.</p>
           }
         </div>
-        <div class="mt-6 flex flex-wrap gap-2">
+        <h3 class="mt-7 font-semibold">Add an existing employee</h3>
+        <div class="mt-3 flex flex-wrap gap-2">
           <input
             class="profile-input flex-1"
             [(ngModel)]="employeeEmail"
             placeholder="Employee email"
-          /><select multiple class="profile-input w-auto" [(ngModel)]="employeeRoles">
+          /><select
+            class="profile-input w-auto"
+            [(ngModel)]="employeeGroupId"
+            name="newEmployeeGroup"
+          >
+            <option value="">No group</option>
+            @for (group of company.groups || []; track group._id) {
+            <option [value]="group._id">{{ group.name }}</option>
+            }</select
+          ><select
+            multiple
+            class="profile-input w-auto"
+            [(ngModel)]="employeeRoles"
+            name="newEmployeeRoles"
+          >
             <option value="member">Member</option>
             <option value="admin">Admin</option>
             <option value="recruiter">Recruiter</option>
@@ -1183,15 +1522,21 @@
             <button type="button" class="text-stone-400" (click)="closeProjectDialog()">×</button>
           </div>
           <p class="mt-1 text-sm text-stone-500">This project will belong to {{ company.name }}.</p>
-          <div class="mt-5 grid gap-3">
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
             <input
               class="profile-input"
               [(ngModel)]="projectTitle"
               name="dialogProjectTitle"
               placeholder="Project title"
               required
-            /><textarea
+            /><input
               class="profile-input"
+              [(ngModel)]="projectLocation"
+              name="dialogProjectLocation"
+              placeholder="Location (optional)"
+              maxlength="160"
+            /><textarea
+              class="profile-input sm:col-span-2"
               [(ngModel)]="projectSummary"
               name="dialogProjectSummary"
               placeholder="Short project summary"

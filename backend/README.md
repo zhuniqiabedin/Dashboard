@@ -1,6 +1,6 @@
-# Career Space API
+# Workpath API
 
-NestJS backend for the Career Space Angular application.
+NestJS backend for the Workpath Angular application.
 
 MongoDB is connected through NestJS Mongoose. The API reads its settings from
 `backend/.env`. Keep `.env` private and never commit it.
@@ -24,6 +24,15 @@ Login returns a JWT; profile routes require it as a Bearer token.
 Register with `POST /auth/register` or sign in with `POST /auth/login` using
 `{ "email": "...", "password": "..." }`. Read and update the signed-in
 user's profile at `GET /profiles/me` and `PATCH /profiles/me`.
+
+Company employee invitations use SMTP. Configure `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, and `APP_URL` in
+`backend/.env` (see `.env.example`). A company manager can create an account
+with `POST /companies/:id/employees/invite`; the new employee receives a
+single-use link to confirm their email and choose a password. The link expires
+after 24 hours. The public `POST /auth/confirm-invite` endpoint accepts its
+token and the employee's new password. Existing accounts can still be added
+with `POST /companies/:id/employees`.
 
 To provision the initial local account, set `SEED_USER_EMAIL`,
 `SEED_USER_PASSWORD`, and `SEED_USER_NAME` in `.env`, then run `npm run seed:user`.

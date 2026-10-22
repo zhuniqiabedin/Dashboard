@@ -7,84 +7,114 @@
       <h1 class="mt-2 text-3xl font-semibold tracking-tight">Your calendar</h1>
       <p class="mt-2 text-sm text-stone-500">Make time for the things that move you forward.</p>
     </div>
-    <button
-      type="button"
-      class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182]"
-      (click)="openEventForm()"
-    >
-      ＋ &nbsp; Add event
-    </button>
   </div>
 
   @if (notice) {
-  <p class="mt-4 text-sm text-[#0a66c2]" role="status">{{ notice }}</p>
+  <div
+    class="fixed right-4 top-4 z-[60] flex max-w-sm items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-800 shadow-lg"
+    role="status"
+    aria-live="polite"
+  >
+    <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-100 font-semibold">✓</span>
+    <span>{{ notice }}</span>
+  </div>
   } @if (error) {
   <p class="mt-4 text-sm text-rose-600" role="alert">{{ error }}</p>
-  } @if (showEventForm) {
-  <form class="mt-5 rounded-2xl border border-stone-200/80 bg-white p-5" (ngSubmit)="saveEvent()">
-    <div class="flex items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold">Add an event</h2>
-      <button
-        type="button"
-        class="text-sm text-stone-500 hover:text-stone-800"
-        (click)="showEventForm = false"
-      >
-        Cancel
-      </button>
-    </div>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-      <label class="text-sm font-medium text-stone-700 sm:col-span-2">
-        Event name
-        <input
-          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
-          name="title"
-          [(ngModel)]="newEvent.title"
-          maxlength="120"
-          required
-          placeholder="e.g. Portfolio review"
-        />
-      </label>
-      <label class="text-sm font-medium text-stone-700">
-        Date
-        <input
-          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
-          type="date"
-          name="date"
-          [(ngModel)]="newEvent.date"
-          [min]="minDate"
-          required
-        />
-      </label>
-      <label class="text-sm font-medium text-stone-700">
-        Start time
-        <input
-          class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
-          type="time"
-          name="time"
-          [(ngModel)]="newEvent.time"
-          [min]="minTime"
-          required
-        />
-      </label>
-      <label class="text-sm font-medium text-stone-700 sm:col-span-2">
-        Notes (optional)
-        <textarea
-          class="mt-1.5 min-h-20 w-full resize-y rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
-          name="description"
-          [(ngModel)]="newEvent.description"
-          maxlength="2000"
-          placeholder="Add a few details"
-        ></textarea>
-      </label>
-    </div>
-    <button
-      class="mt-4 rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182] disabled:opacity-60"
-      type="submit"
-      [disabled]="saving"
+  }
+
+  @if (meetingDialogOpen) {
+  <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4" (click)="closeMeetingDialog()">
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="meeting-dialog-title"
+      class="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl sm:p-6"
+      (click)="$event.stopPropagation()"
     >
-      {{ saving ? 'Saving…' : 'Save event' }}
-    </button>
-  </form>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">YOUR CALENDAR</div>
+          <h2 id="meeting-dialog-title" class="mt-1 text-xl font-semibold">Add a meeting</h2>
+          <p class="mt-1 text-sm text-stone-500">{{ newMeeting.date | date: 'EEEE, MMMM d, y' }}</p>
+        </div>
+        <button
+          type="button"
+          aria-label="Close meeting dialog"
+          class="grid size-9 place-items-center rounded-lg text-xl text-stone-500 hover:bg-stone-100"
+          (click)="closeMeetingDialog()"
+        >
+          ×
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveMeeting()">
+        <label class="block text-sm font-medium text-stone-700">
+          Meeting name
+          <input
+            class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+            name="title"
+            [(ngModel)]="newMeeting.title"
+            maxlength="120"
+            required
+            autofocus
+            placeholder="e.g. Portfolio review"
+          />
+        </label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block text-sm font-medium text-stone-700">
+            Date
+            <input
+              class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+              type="date"
+              name="date"
+              [(ngModel)]="newMeeting.date"
+              [min]="minDate"
+              required
+            />
+          </label>
+          <label class="block text-sm font-medium text-stone-700">
+            Start time
+            <input
+              class="mt-1.5 w-full rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+              type="time"
+              name="time"
+              [(ngModel)]="newMeeting.time"
+              [min]="minTime"
+              required
+            />
+          </label>
+        </div>
+        <label class="block text-sm font-medium text-stone-700">
+          Notes (optional)
+          <textarea
+            class="mt-1.5 min-h-20 w-full resize-y rounded-xl border border-stone-200 px-3 py-2.5 font-normal outline-none focus:border-[#0a66c2] focus:ring-2 focus:ring-[#0a66c2]/10"
+            name="description"
+            [(ngModel)]="newMeeting.description"
+            maxlength="2000"
+            placeholder="Add a few details"
+          ></textarea>
+        </label>
+        @if (error) {
+        <p class="text-sm text-rose-600" role="alert">{{ error }}</p>
+        }
+        <div class="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            class="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium hover:bg-stone-50"
+            (click)="closeMeetingDialog()"
+          >
+            Cancel
+          </button>
+          <button
+            class="rounded-xl bg-[#0a66c2] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#004182] disabled:opacity-60"
+            type="submit"
+            [disabled]="saving"
+          >
+            {{ saving ? 'Saving…' : 'Add meeting' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
   }
 
   <div class="mt-7 grid gap-5 lg:grid-cols-[1.7fr_1fr]">
@@ -158,7 +188,7 @@
           </time>
           <i class="w-0.5 shrink-0 self-stretch rounded-full bg-[#8bab9b]"></i>
           <div class="min-w-0 flex-1">
-            <b class="text-sm">{{ event.title }}</b>
+            <b class="text-sm">{{ event.kind === 'meeting' ? 'Meeting: ' : '' }}{{ event.title }}</b>
             @if (event.description) {
             <p class="mt-1 text-xs whitespace-pre-line text-stone-500">{{ event.description }}</p>
             }

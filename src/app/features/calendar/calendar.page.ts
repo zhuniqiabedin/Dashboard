@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 
@@ -8,6 +8,7 @@ type CalendarEvent = {
   title: string;
   description: string;
   startsAt: string;
+  kind?: 'event' | 'meeting';
 };
 
 @Component({
@@ -15,18 +16,19 @@ type CalendarEvent = {
   standalone: false,
   templateUrl: './calendar.page.html',
 })
-export class CalendarPage implements OnInit {
+export class CalendarPage implements OnInit, OnDestroy {
   notice = '';
   error = '';
   loading = false;
   saving = false;
-  showEventForm = false;
+  meetingDialogOpen = false;
   offset = 0;
   readonly today = new Date();
   selected = this.today.getDate();
   readonly weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   events: CalendarEvent[] = [];
-  newEvent = { title: '', description: '', date: this.localDate(this.today), time: '09:00' };
+  newMeeting = { title: '', description: '', date: this.localDate(this.today), time: '09:00' };
+  private noticeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
     private readonly http: HttpClient,
@@ -35,6 +37,10 @@ export class CalendarPage implements OnInit {
 
   ngOnInit(): void {
     this.loadEvents();
+  }
+
+  ngOnDestroy(): void {
+    if (this.noticeTimeout) clearTimeout(this.noticeTimeout);
   }
 
   get date(): Date {
@@ -71,7 +77,7 @@ export class CalendarPage implements OnInit {
   }
 
   get minTime(): string {
-    if (this.newEvent.date !== this.minDate) return '00:00';
+    if (this.newMeeting.date !== this.minDate) return '00:00';
     const earliest = new Date();
     earliest.setSeconds(0, 0);
     earliest.setMinutes(earliest.getMinutes() + 1);
@@ -102,6 +108,57 @@ export class CalendarPage implements OnInit {
       selectedDate.getMonth() -
       this.today.getMonth();
     this.selected = selectedDate.getDate();
+    this.openMeetingDialog();
+  }
+
+  openMeetingDialog(): void {
+    this.error = '';
+    this.notice = '';
+    this.newMeeting = { title: '', description: '', date: this.selectedDate, time: '09:00' };
+    this.meetingDialogOpen = true;
+  }
+
+  closeMeetingDialog(): void {
+    if (!this.saving) this.meetingDialogOpen = false;
+  }
+
+  saveMeeting(): void {
+    if (this.saving) return;
+    const startsAt = new Date(`${this.newMeeting.date}T${this.newMeeting.time}`);
+    if (Number.isNaN(startsAt.getTime()) || startsAt.getTime() < Date.now()) {
+      this.error = 'Choose a valid future date and time for the meeting.';
+      return;
+    }
+
+    this.error = '';
+    this.saving = true;
+    this.http
+      .post<CalendarEvent>(
+        `${environment.apiUrl}/calendar/meetings`,
+        {
+          title: this.newMeeting.title.trim(),
+          description: this.newMeeting.description.trim(),
+          startsAt: startsAt.toISOString(),
+        },
+        { headers: this.headers() },
+      )
+      .subscribe({
+        next: (meeting) => {
+          this.events = [...this.events, meeting];
+          this.offset =
+            (startsAt.getFullYear() - this.today.getFullYear()) * 12 +
+            startsAt.getMonth() -
+            this.today.getMonth();
+          this.selected = startsAt.getDate();
+          this.meetingDialogOpen = false;
+          this.showNotice('Meeting added to your calendar.');
+          this.saving = false;
+        },
+        error: (requestError: HttpErrorResponse) => {
+          this.error = this.errorMessage(requestError, 'Could not save the meeting.');
+          this.saving = false;
+        },
+      });
   }
 
   isToday(day: number): boolean {
@@ -125,56 +182,6 @@ export class CalendarPage implements OnInit {
     return this.events.some((event) => this.localDate(new Date(event.startsAt)) === dateKey);
   }
 
-  openEventForm(): void {
-    this.error = '';
-    this.notice = '';
-    this.newEvent = { title: '', description: '', date: this.selectedDate, time: '09:00' };
-    this.showEventForm = true;
-  }
-
-  saveEvent(): void {
-    if (this.saving) return;
-    const startsAt = new Date(`${this.newEvent.date}T${this.newEvent.time}`);
-    if (Number.isNaN(startsAt.getTime())) {
-      this.error = 'Enter a valid event date and time.';
-      return;
-    }
-    if (startsAt.getTime() < Date.now()) {
-      this.error = 'Choose a time in the future. Events cannot be scheduled in the past.';
-      return;
-    }
-
-    this.error = '';
-    this.saving = true;
-    this.http
-      .post<CalendarEvent>(
-        `${environment.apiUrl}/calendar/events`,
-        {
-          title: this.newEvent.title.trim(),
-          description: this.newEvent.description.trim(),
-          startsAt: startsAt.toISOString(),
-        },
-        { headers: this.headers() },
-      )
-      .subscribe({
-        next: (event) => {
-          this.events = [...this.events, event];
-          this.offset =
-            (startsAt.getFullYear() - this.today.getFullYear()) * 12 +
-            startsAt.getMonth() -
-            this.today.getMonth();
-          this.selected = startsAt.getDate();
-          this.showEventForm = false;
-          this.notice = 'Event saved to your calendar.';
-          this.saving = false;
-        },
-        error: (requestError: HttpErrorResponse) => {
-          this.error = this.errorMessage(requestError, 'Could not save the event.');
-          this.saving = false;
-        },
-      });
-  }
-
   removeEvent(event: CalendarEvent): void {
     this.error = '';
     this.http
@@ -184,7 +191,7 @@ export class CalendarPage implements OnInit {
       .subscribe({
         next: () => {
           this.events = this.events.filter((item) => item.id !== event.id);
-          this.notice = 'Event deleted.';
+          this.showNotice('Event deleted from your calendar.');
         },
         error: (requestError: HttpErrorResponse) => {
           this.error = this.errorMessage(requestError, 'Could not delete the event.');
@@ -222,6 +229,15 @@ export class CalendarPage implements OnInit {
 
   private errorMessage(error: HttpErrorResponse, fallback: string): string {
     return typeof error.error?.message === 'string' ? error.error.message : fallback;
+  }
+
+  private showNotice(message: string): void {
+    if (this.noticeTimeout) clearTimeout(this.noticeTimeout);
+    this.notice = message;
+    this.noticeTimeout = setTimeout(() => {
+      this.notice = '';
+      this.noticeTimeout = undefined;
+    }, 4000);
   }
 
   private localDate(date: Date): string {

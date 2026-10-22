@@ -10,16 +10,18 @@ import { JobsModule } from './jobs/jobs.module';
 import { MessagesModule } from './messages/messages.module';
 import { CalendarEventsModule } from './calendar-events/calendar-events.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CvModule } from './cv/cv.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const uri =
-          config.get<string>('MONGODB_URI') ?? 'mongodb://127.0.0.1:27017/career-space';
+        const uri = config.get<string>('MONGODB_URI') ?? 'mongodb://127.0.0.1:27017/career-space';
         return {
           uri,
           // Atlas database users are authenticated through the admin database even
@@ -36,6 +38,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MessagesModule,
     CalendarEventsModule,
     NotificationsModule,
+    CvModule,
   ],
   controllers: [AppController],
 })

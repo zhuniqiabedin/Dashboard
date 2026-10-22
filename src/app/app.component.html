@@ -7,7 +7,7 @@
         ><span class="grid size-8 place-items-center rounded-xl bg-[#e8f3ff] text-lg text-[#004182]"
           >✳</span
         >
-        career<span class="-ml-2 font-normal text-[#dcecff]">space</span></a
+        Workpath</a
       >
       <div class="relative z-10 max-w-lg py-10">
         <div class="mb-5 text-xs font-semibold tracking-[.18em] text-[#dcecff]">
@@ -30,7 +30,7 @@
     </section>
     <section class="flex min-h-screen flex-col bg-white px-6 py-7 sm:px-12 lg:px-20">
       <div class="flex justify-end gap-2 text-sm text-stone-500">
-        <span>{{ signup ? 'Already have an account?' : 'New to Career Space?' }}</span
+        <span>{{ signup ? 'Already have an account?' : 'New to Workpath?' }}</span
         ><button class="font-semibold text-[#0a66c2] hover:underline" (click)="signup = !signup">
           {{ signup ? 'Log in' : 'Sign up' }}
         </button>
@@ -126,7 +126,7 @@
           <b class="mr-2 text-base">G</b> Continue with Google
         </button>
         <p class="mt-7 text-center text-sm text-stone-500">
-          {{ signup ? 'Already part of Career Space?' : 'New to Career Space?' }}
+          {{ signup ? 'Already part of Workpath?' : 'New to Workpath?' }}
           <button
             class="font-semibold text-[#0a66c2] hover:underline"
             (click)="signup = !signup; notice = ''"
@@ -235,10 +235,23 @@
           <a
             routerLink="/overview"
             class="flex shrink-0 items-center gap-2.5 text-3xl font-bold tracking-tight text-[#2864dc]"
-            ><span
-              class="grid size-11 place-items-center rounded-xl bg-[#2864dc] text-xl text-white"
-              ><fa-icon [icon]="faLayers"></fa-icon></span
-            ><span class="hidden sm:inline">gather</span></a
+            ><svg
+              class="size-11 shrink-0"
+              width="96"
+              height="96"
+              viewBox="0 0 96 96"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              ><rect width="96" height="96" rx="24" fill="#2865D9" />
+              <path
+                d="M21 30L33 66L49 43L63 66L78 29"
+                stroke="white"
+                stroke-width="8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+            ><span class="hidden sm:inline">Workpath</span></a
           >
           <button
             class="text-xl text-slate-500 md:hidden"
@@ -384,7 +397,7 @@
           class="mt-12 flex justify-between border-t border-stone-200/80 pt-5 text-[11px] text-stone-400"
         >
           <span>Made for your next chapter <b class="text-[#0a66c2]">✳</b></span
-          ><span>© 2026 Career Space</span>
+          ><span>© 2026 Workpath</span>
         </footer>
       </div>
     </main>

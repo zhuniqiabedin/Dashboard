@@ -1,8 +1,10 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CvEducation, CvCertificate, CvProject, CvService } from '../../core/cv.service';
 import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
+import { Subscription, switchMap } from 'rxjs';
 type CvProfile = {
   name: string;
   email: string;
@@ -14,9 +16,19 @@ type CvProfile = {
   photo: string;
 };
 @Component({ selector: 'app-cv-page', standalone: false, templateUrl: './cv.page.html' })
-export class CvPage implements OnInit {
+export class CvPage implements OnInit, OnDestroy {
   readonly cv;
   notice = '';
+  templates: { id: string; name: string; description: string; accent: string }[] = [];
+  selectedTemplate = 'modern';
+  downloading = false;
+  previewOpen = false;
+  previewLoading = false;
+  previewRequested = false;
+  previewError = '';
+  previewSrc: SafeResourceUrl | null = null;
+  private previewUrl = '';
+  private previewRequest?: Subscription;
   editing = false;
   editingProjectIndex: number | null = null;
   projectDraft: CvProject | null = null;
@@ -37,8 +49,65 @@ export class CvPage implements OnInit {
     private readonly service: CvService,
     private readonly http: HttpClient,
     private readonly auth: AuthService,
+    private readonly sanitizer: DomSanitizer,
   ) {
     this.cv = service.cv;
+  }
+  selectTemplate(templateId: string): void {
+    this.selectedTemplate = templateId;
+    this.previewOpen = true;
+    this.previewRequested = false;
+    this.previewError = '';
+    this.previewRequest?.unsubscribe();
+    this.releasePreviewUrl();
+    this.previewSrc = null;
+  }
+  loadPreview(): void {
+    const templateId = this.selectedTemplate;
+    this.previewRequested = true;
+    this.previewLoading = true;
+    this.previewError = '';
+    this.previewRequest?.unsubscribe();
+    this.releasePreviewUrl();
+    this.previewSrc = null;
+    this.previewRequest = this.persistCurrentCv()
+      .pipe(
+        switchMap(() =>
+          this.http.get(`${environment.apiUrl}/cv/preview`, {
+            headers: this.headers(),
+            params: { template: templateId },
+            responseType: 'blob',
+          }),
+        ),
+      )
+      .subscribe({
+        next: (blob) => {
+          if (!this.previewOpen) return;
+          this.previewUrl = URL.createObjectURL(blob);
+          this.previewSrc = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewUrl);
+          this.previewLoading = false;
+        },
+        error: (error) => {
+          this.previewLoading = false;
+          this.previewError =
+            error.error?.message || 'Could not create the CV preview. Please try again.';
+        },
+      });
+  }
+  closePreview(): void {
+    this.previewOpen = false;
+    this.previewLoading = false;
+    this.previewRequested = false;
+    this.previewRequest?.unsubscribe();
+    this.previewRequest = undefined;
+    this.releasePreviewUrl();
+    this.previewSrc = null;
+  }
+  get previewDocumentUrl(): string | null {
+    return this.previewUrl || null;
+  }
+  ngOnDestroy(): void {
+    this.closePreview();
   }
   ngOnInit(): void {
     const user = this.auth.readUser();
@@ -47,6 +116,12 @@ export class CvPage implements OnInit {
     this.http
       .get<Partial<CvProfile>>(`${environment.apiUrl}/profiles/me`, { headers: this.headers() })
       .subscribe({ next: (profile) => (this.profile = { ...this.profile, ...profile }) });
+    this.http
+      .get<typeof this.templates>(`${environment.apiUrl}/cv/templates`, { headers: this.headers() })
+      .subscribe({
+        next: (templates) => (this.templates = templates),
+        error: () => (this.notice = 'Could not load CV designs. Check that the API is running.'),
+      });
   }
   get initials(): string {
     return this.profile.name
@@ -108,13 +183,17 @@ export class CvPage implements OnInit {
     this.update({ certificates: this.cv().certificates.filter((_, index) => index !== i) });
   }
   save(): void {
-    this.service.save(this.cv());
     this.editing = false;
-    this.http
-      .patch<Partial<CvProfile>>(
-        `${environment.apiUrl}/profiles/me`,
-        { experience: this.profile.experience, headline: this.profile.headline },
-        { headers: this.headers() },
+    this.service
+      .persist(this.cv())
+      .pipe(
+        switchMap(() =>
+          this.http.patch<Partial<CvProfile>>(
+            `${environment.apiUrl}/profiles/me`,
+            { experience: this.profile.experience, headline: this.profile.headline },
+            { headers: this.headers() },
+          ),
+        ),
       )
       .subscribe({
         next: (profile) => {
@@ -122,13 +201,65 @@ export class CvPage implements OnInit {
           this.notice = 'Your CV has been saved.';
         },
         error: () => {
-          this.notice =
-            'Your CV is saved locally. Your experience will sync when the API is available.';
+          this.notice = 'Could not save your CV to the server. Your local copy is still available.';
         },
       });
   }
   downloadResume(): void {
-    window.print();
+    if (this.downloading) return;
+    this.downloading = true;
+    this.notice = '';
+    this.service
+      .persist(this.cv())
+      .pipe(
+        switchMap(() =>
+          this.http.patch(
+            `${environment.apiUrl}/profiles/me`,
+            { experience: this.profile.experience, headline: this.profile.headline },
+            { headers: this.headers() },
+          ),
+        ),
+        switchMap(() =>
+          this.http.get(`${environment.apiUrl}/cv/pdf`, {
+            headers: this.headers(),
+            params: { template: this.selectedTemplate },
+            responseType: 'blob',
+          }),
+        ),
+      )
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = `resume-${this.selectedTemplate}.pdf`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+          this.notice = `${this.selectedTemplate} CV downloaded as PDF.`;
+          this.downloading = false;
+        },
+        error: (error) => {
+          this.notice = error.error?.message || 'Could not generate the PDF. Please try again.';
+          this.downloading = false;
+        },
+      });
+  }
+  private persistCurrentCv() {
+    return this.service
+      .persist(this.cv())
+      .pipe(
+        switchMap(() =>
+          this.http.patch(
+            `${environment.apiUrl}/profiles/me`,
+            { experience: this.profile.experience, headline: this.profile.headline },
+            { headers: this.headers() },
+          ),
+        ),
+      );
+  }
+  private releasePreviewUrl(): void {
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+    this.previewUrl = '';
   }
   private headers(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });

@@ -3,6 +3,7 @@ import { Branches } from '../branches.enum';
 export class CreateProjectDto {
   pageId?: string;
   title!: string;
+  location?: string;
   summary!: string;
   details?: string;
   category!: string;

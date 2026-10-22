@@ -6,7 +6,7 @@ export class AppController {
   getHealth() {
     return {
       status: 'ok',
-      service: 'career-space-api',
+      service: 'workpath-api',
     };
   }
 }

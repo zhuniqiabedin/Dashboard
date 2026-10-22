@@ -13,6 +13,12 @@ export class User {
 
   @Prop({ required: true, select: false })
   passwordHash!: string;
+  @Prop({ type: Boolean, default: true })
+  emailVerified!: boolean;
+  @Prop({ type: String, select: false })
+  emailConfirmationTokenHash?: string;
+  @Prop({ type: Date, select: false })
+  emailConfirmationExpiresAt?: Date;
   @Prop({ type: Date, default: Date.now })
   lastSeen!: Date;
   @Prop({ type: Boolean, default: true }) activeStatus!: boolean;

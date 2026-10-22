@@ -48,6 +48,87 @@
       >make progress</span
     >
   </div>
+  <section class="mt-8" aria-labelledby="recommended-jobs-title">
+    <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">MATCHED TO YOU</div>
+        <h2 id="recommended-jobs-title" class="mt-1 text-xl font-semibold">
+          Jobs that fit your skills
+        </h2>
+        <p class="mt-1 text-sm text-stone-500">
+          Recommended from the skills in your profile and CV.
+        </p>
+      </div>
+      <a routerLink="/discover_jobs" class="text-xs font-medium text-[#0a66c2] hover:underline"
+        >Browse all jobs ↗</a
+      >
+    </div>
+    @if (jobsLoading()) {
+    <p
+      class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-500"
+      role="status"
+    >
+      Finding jobs that match your skills…
+    </p>
+    } @else if (jobsError()) {
+    <div class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-red-700" role="alert">
+      {{ jobsError() }}
+      <button type="button" class="ml-2 underline" (click)="loadRecommendedJobs()">
+        Try again
+      </button>
+    </div>
+    } @else if (!hasUserSkills()) {
+    <div class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600">
+      Add skills to your <a routerLink="/profile" class="text-[#0a66c2] underline">profile</a> or
+      <a routerLink="/cv" class="text-[#0a66c2] underline">CV</a> to get job recommendations.
+    </div>
+    } @else {
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (item of topRecommendedJobs(); track item.job._id) {
+      <article class="rounded-2xl border border-stone-200/80 bg-white p-5">
+        <div class="flex items-start justify-between gap-3">
+          <a [routerLink]="['/company', item.job.pageId, 'jobs']" class="min-w-0 hover:underline">
+            <span class="block truncate text-xs font-medium text-[#0a66c2]"
+              >{{ item.job.companyName }}</span
+            >
+            <h3 class="mt-1 text-base font-semibold text-stone-900">{{ item.job.title }}</h3>
+          </a>
+          <span
+            class="shrink-0 rounded-full bg-[#eaf5ee] px-2.5 py-1 text-xs font-semibold text-[#347253]"
+          >
+            {{ item.score }}% match
+          </span>
+        </div>
+        <p class="mt-2 text-xs text-stone-500">
+          {{ item.job.location }} · {{ item.job.workplace || 'Onsite' }}
+        </p>
+        <p class="mt-3 line-clamp-2 text-sm text-stone-600">{{ item.job.description }}</p>
+        <div class="mt-4 flex flex-wrap gap-2" aria-label="Matching skills">
+          @for (skill of item.matchedSkills; track skill) {
+          <span class="rounded-full bg-[#e8f3ff] px-2.5 py-1 text-xs text-[#0a66c2]"
+            >{{ skill }}</span
+          >
+          }
+        </div>
+        <a
+          [routerLink]="['/company', item.job.pageId, 'jobs']"
+          class="mt-4 inline-block text-xs font-medium text-[#0a66c2] hover:underline"
+        >
+          View job ↗
+        </a>
+      </article>
+      } @empty {
+      <div
+        class="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600 md:col-span-2 xl:col-span-3"
+      >
+        No open jobs currently match at least half of your listed skills.
+        <a routerLink="/discover_jobs" class="ml-1 text-[#0a66c2] underline">Browse all jobs</a> or
+        update your <a routerLink="/profile" class="text-[#0a66c2] underline">profile skills</a>.
+      </div>
+      }
+    </div>
+    }
+  </section>
   <div class="mt-9 mb-4 flex items-end justify-between">
     <div>
       <div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR OVERVIEW</div>

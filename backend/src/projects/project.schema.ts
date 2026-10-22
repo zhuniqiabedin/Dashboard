@@ -12,6 +12,7 @@ export class Project {
   userId!: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 100 }) title!: string;
+  @Prop({ default: '', trim: true, maxlength: 160 }) location!: string;
   @Prop({ required: true, trim: true, maxlength: 220 }) summary!: string;
   @Prop({ default: '', maxlength: 1000 }) details!: string;
   @Prop({ required: true, trim: true, maxlength: 80 }) category!: string;

@@ -11,6 +11,9 @@ export class CalendarEvent {
   @Prop({ required: true, trim: true, maxlength: 120 })
   title!: string;
 
+  @Prop({ required: true, enum: ['event', 'meeting'], default: 'event' })
+  kind!: 'event' | 'meeting';
+
   @Prop({ default: '', trim: true, maxlength: 2000 })
   description!: string;
 

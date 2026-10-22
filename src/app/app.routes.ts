@@ -15,6 +15,11 @@ const requireGuest: CanActivateFn = () => {
 
 export const routes: Routes = [
   {
+    path: 'confirm-invite',
+    loadComponent: () =>
+      import('./features/auth/confirm-invite.page').then((m) => m.ConfirmInvitePage),
+  },
+  {
     path: 'login',
     pathMatch: 'full',
     canActivate: [requireGuest],

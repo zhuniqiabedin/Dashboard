@@ -10,6 +10,7 @@ import { environment } from '../../../environments/environment';
 type CompanyProject = {
   _id: string;
   title: string;
+  location?: string;
   summary: string;
   details?: string;
   category: string;

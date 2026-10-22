@@ -16,6 +16,7 @@ type StatusFilter = 'All' | ProjectStatus;
 type ProjectDraft = Pick<
   Project,
   | 'title'
+  | 'location'
   | 'summary'
   | 'details'
   | 'category'
@@ -179,6 +180,7 @@ export class ProjectsPage {
     this.editingProjectId = project.id;
     this.draft = {
       title: project.title,
+      location: project.location ?? '',
       summary: project.summary,
       details: project.details,
       category: project.category,
@@ -220,6 +222,7 @@ export class ProjectsPage {
     if (!title || !summary || !this.draft.startDate) return;
     const project: Omit<Project, 'id'> = {
       title,
+      location: this.draft.location?.trim() ?? '',
       summary,
       details: this.draft.details.trim(),
       category: this.draft.category,
@@ -265,6 +268,7 @@ export class ProjectsPage {
   private emptyDraft(): ProjectDraft {
     return {
       title: '',
+      location: '',
       summary: '',
       details: '',
       category: this.categories[0],

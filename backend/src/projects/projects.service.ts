@@ -297,6 +297,12 @@ export class ProjectsService {
         'Project summary is required and must be under 220 characters.',
       );
     }
+    if (
+      input.location !== undefined &&
+      (typeof input.location !== 'string' || input.location.length > 160)
+    ) {
+      throw new BadRequestException('Project location must be text under 160 characters.');
+    }
     if (typeof input.category !== 'string' || !input.category.trim()) {
       throw new BadRequestException('Project category is required.');
     }
@@ -339,6 +345,7 @@ export class ProjectsService {
       throw new BadRequestException('Unpublish date must be after publish date.');
     return {
       title: input.title.trim(),
+      location: input.location?.trim() ?? '',
       summary: input.summary.trim(),
       details: input.details?.trim() ?? '',
       category: input.category.trim(),
