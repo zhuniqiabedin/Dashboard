@@ -110,17 +110,24 @@ export class AppComponent implements OnDestroy {
       this.notificationsTimer = setInterval(() => this.loadNotifications(), 30_000);
     }
     if (this.auth.token) this.messagesSocket.connect(this.auth.token);
+    this.updateRouteLayout(this.router.url);
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        const parts = event.urlAfterRedirects.split('/').filter(Boolean);
-        this.companyMode = parts[0] === 'companies' && parts.length >= 2;
-        this.companyListingMode = parts[0] === 'companies' && parts.length === 1;
-        this.fullHeightChat =
-          parts[0] === 'messages' || (parts[0] === 'companies' && parts.at(-1) === 'messages');
+        this.updateRouteLayout(event.urlAfterRedirects);
         this.changeDetector.markForCheck();
       });
   }
+
+  private updateRouteLayout(url: string): void {
+    const path = url.split(/[?#]/, 1)[0];
+    const parts = path.split('/').filter(Boolean);
+    this.companyMode = parts[0] === 'companies' && parts.length >= 2;
+    this.companyListingMode = parts[0] === 'companies' && parts.length === 1;
+    this.fullHeightChat =
+      parts[0] === 'messages' || (parts[0] === 'companies' && parts.at(-1) === 'messages');
+  }
+
   ngOnDestroy() {
     if (this.notificationsTimer) clearInterval(this.notificationsTimer);
     this.sessionExpiredSubscription.unsubscribe();

@@ -9,7 +9,7 @@ import { filter } from 'rxjs';
   template: `
     <div
       [class]="
-        chatLayout ? 'h-full min-h-0 overflow-hidden bg-white' : 'min-h-[calc(100vh-72px)] bg-white'
+        chatLayout ? 'h-[calc(100dvh-76px)] min-h-0 overflow-hidden bg-white' : 'min-h-[calc(100vh-72px)] bg-white'
       "
     >
       @if (false) {
@@ -53,7 +53,9 @@ export class UserRemoteComponent {
   chatLayout = false;
 
   @HostBinding('class') get hostClasses(): string {
-    return this.chatLayout ? 'block h-full min-h-0 min-w-0 overflow-hidden' : 'block min-w-0';
+    return this.chatLayout
+      ? 'block h-[calc(100dvh-76px)] min-h-0 min-w-0 overflow-hidden'
+      : 'block min-w-0';
   }
 
   constructor(router: Router) {

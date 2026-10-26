@@ -32,20 +32,20 @@
     @if (loading()) {
     <p class="py-10 text-sm text-stone-500">Loading your companies…</p>
     } @else if (companies().length) {
-    <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       @for (company of companies(); track company._id) {
       <article
         class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
       >
         <div
-          class="relative h-32 overflow-hidden bg-gradient-to-br from-[#dcecff] via-[#70b5f9] to-[#004182]"
+          class="relative h-24 overflow-hidden bg-gradient-to-br from-[#dcecff] via-[#70b5f9] to-[#004182]"
         >
           <div class="absolute -top-12 -right-6 size-40 rounded-full border border-white/25"></div>
           <div
             class="absolute right-8 -bottom-20 size-44 rounded-full border border-white/20"
           ></div>
           <span
-            class="absolute bottom-0 left-5 grid size-14 translate-y-1/2 place-items-center overflow-hidden rounded-2xl border-4 border-white bg-[#e8f3ff] text-xl font-semibold text-[#0a66c2]"
+            class="absolute bottom-0 left-4 grid size-12 translate-y-1/2 place-items-center overflow-hidden rounded-xl border-4 border-white bg-[#e8f3ff] text-lg font-semibold text-[#0a66c2]"
             >@if (company.logo) {
             <img
               [src]="company.logo"
@@ -55,16 +55,16 @@
             } @else { {{ company.name.slice(0, 1).toUpperCase() }} }</span
           >
         </div>
-        <div class="p-5 pt-9">
-          <h3 class="text-lg font-semibold text-stone-800">{{ company.name }}</h3>
+        <div class="p-4 pt-8">
+          <h3 class="truncate text-base font-semibold text-stone-800">{{ company.name }}</h3>
           <p class="mt-1 text-xs text-stone-500">
             ⌖ &nbsp;{{ company.location || 'Location not set' }}
           </p>
-          <p class="mt-4 line-clamp-2 min-h-10 text-sm leading-5 text-stone-500">
+          <p class="mt-3 line-clamp-2 min-h-9 text-sm leading-[18px] text-stone-500">
             {{ company.description }}
           </p>
-          <div class="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
-            <div class="flex gap-4 text-xs text-stone-500">
+          <div class="mt-4 flex items-center justify-between gap-2 border-t border-stone-100 pt-3">
+            <div class="flex gap-3 text-[11px] text-stone-500">
               <span><b class="text-stone-700">{{ company.employeeIds.length }}</b> employees</span
               ><span><b class="text-stone-700">{{ company.projectIds.length }}</b> projects</span>
             </div>

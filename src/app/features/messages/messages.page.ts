@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { AfterViewChecked, ChangeDetectorRef, Component, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
@@ -11,7 +11,8 @@ import { ActivatedRoute } from '@angular/router';
   host: { class: 'block h-full min-h-0' },
   templateUrl: './messages.page.html',
 })
-export class MessagesPage {
+export class MessagesPage implements AfterViewChecked {
+  @ViewChild('messageList') private messageList?: ElementRef<HTMLDivElement>;
   conversations: any[] = [];
   selected: any = null;
   text = '';
@@ -21,6 +22,7 @@ export class MessagesPage {
   activeStatus = true;
   private requestedConversationId: string | null;
   private readonly socketSubscription: Subscription;
+  private scrollToLatestMessage = false;
   constructor(
     private readonly http: HttpClient,
     private readonly auth: AuthService,
@@ -119,6 +121,12 @@ export class MessagesPage {
   ngOnDestroy(): void {
     this.socketSubscription.unsubscribe();
   }
+  ngAfterViewChecked(): void {
+    if (!this.scrollToLatestMessage || !this.messageList) return;
+    const element = this.messageList.nativeElement;
+    element.scrollTop = element.scrollHeight;
+    this.scrollToLatestMessage = false;
+  }
   private headers() {
     return new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` });
   }
@@ -139,6 +147,7 @@ export class MessagesPage {
   }
   selectConversation(conversation: any): void {
     this.selected = conversation;
+    this.scrollToLatestMessage = true;
     this.http
       .post(
         `${environment.apiUrl}/messages/conversation/${conversation._id}/read`,
@@ -150,6 +159,7 @@ export class MessagesPage {
           // Keep populated participant/page data from the inbox row while replacing
           // the message list with the read response.
           this.selected = { ...conversation, ...updated };
+          this.scrollToLatestMessage = true;
           const index = this.conversations.findIndex((item) => item._id === conversation._id);
           if (index >= 0) this.conversations[index] = { ...conversation, ...updated };
         },
@@ -192,6 +202,7 @@ export class MessagesPage {
       .get<any>(`${environment.apiUrl}/messages/mine`, { headers: this.headers() })
       .subscribe({
         next: (response) => {
+          const previousSelectedId = this.selected?._id;
           const items = Array.isArray(response)
             ? response
             : (response.conversations ?? response.data ?? []);
@@ -203,6 +214,7 @@ export class MessagesPage {
           this.selected = requested ?? (this.selected
             ? (items.find((item: any) => item._id === this.selected._id) ?? items[0])
             : items[0]);
+          if (requested || !previousSelectedId) this.scrollToLatestMessage = true;
           if (requested) {
             this.requestedConversationId = null;
             this.selectConversation(requested);
