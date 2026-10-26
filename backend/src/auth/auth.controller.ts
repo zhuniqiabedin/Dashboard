@@ -1,5 +1,11 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AuthDto, ConfirmInviteDto, RegisterDto } from './auth.dto';
+import {
+  AuthDto,
+  ConfirmEmailDto,
+  ConfirmInviteDto,
+  RegisterDto,
+  ResendConfirmationDto,
+} from './auth.dto';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -9,6 +15,14 @@ export class AuthController {
   @Post('register')
   register(@Body() input: RegisterDto) {
     return this.authService.register(input);
+  }
+
+  @Post('confirm-email') confirmEmail(@Body() input: ConfirmEmailDto) {
+    return this.authService.confirmRegistrationEmail(input);
+  }
+
+  @Post('resend-confirmation') resendConfirmation(@Body() input: ResendConfirmationDto) {
+    return this.authService.resendRegistrationConfirmation(input);
   }
 
   @Post('confirm-invite')

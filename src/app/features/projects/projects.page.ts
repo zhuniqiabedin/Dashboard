@@ -11,6 +11,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
 import { ActivatedRoute } from '@angular/router';
+import { ReviewFormComponent } from '../../shared/review-form/review-form.component';
 
 type StatusFilter = 'All' | ProjectStatus;
 type ProjectDraft = Pick<
@@ -33,7 +34,7 @@ type ProjectDraft = Pick<
 @Component({
   selector: 'app-projects-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SkillsChipsComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SkillsChipsComponent, ReviewFormComponent],
   templateUrl: './projects.page.html',
 })
 export class ProjectsPage {
@@ -74,6 +75,15 @@ export class ProjectsPage {
   readonly applicantProjectId = signal('');
   readonly projectApplicants = signal<any[]>([]);
   readonly applicantError = signal('');
+  readonly applicantStages = [
+    'New',
+    'Shortlisted',
+    'Contacted',
+    'Interviewing',
+    'Selected',
+    'Rejected',
+    'Completed',
+  ];
 
   constructor(
     private readonly projectsService: ProjectsService,
@@ -102,6 +112,49 @@ export class ProjectsPage {
         next: (items) => this.projectApplicants.set(items || []),
         error: (e) =>
           this.applicantError.set(e.error?.message || 'Could not load project applicants.'),
+      });
+  }
+  updateApplicantStage(application: any, status: string): void {
+    const projectId = this.applicantProjectId();
+    if (!projectId) return;
+    this.http
+      .patch<any>(
+        `${environment.apiUrl}/projects/${projectId}/applications/${application._id}/status`,
+        { status },
+        {
+          headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+        },
+      )
+      .subscribe({
+        next: (updated) =>
+          this.projectApplicants.update((items) =>
+            items.map((item) =>
+              item._id === updated._id ? { ...item, status: updated.status } : item,
+            ),
+          ),
+        error: (error) =>
+          this.applicantError.set(error.error?.message || 'Could not update applicant stage.'),
+      });
+  }
+  messageProjectApplicant(application: any): void {
+    const userId = String(application.userId?._id ?? application.userId ?? '');
+    const projectId = this.applicantProjectId();
+    const title =
+      this.projects().find((project) => project.id === projectId)?.title || 'this project';
+    if (!this.pageId || !userId) return;
+    this.http
+      .post(
+        `${environment.apiUrl}/messages/${this.pageId}/${projectId}`,
+        {
+          recipientUserId: userId,
+          text: `Hi ${application.userId?.name || 'there'}, I’m contacting you about your application to ${title}.`,
+        },
+        { headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }) },
+      )
+      .subscribe({
+        next: () => this.router.navigate(['/companies', this.pageId, 'messages']),
+        error: (error) =>
+          this.applicantError.set(error.error?.message || 'Could not start a conversation.'),
       });
   }
   applicantSkills(value: unknown): string[] {

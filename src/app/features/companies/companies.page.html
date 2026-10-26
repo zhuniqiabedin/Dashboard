@@ -1,6 +1,5 @@
 @if (!selectedCompanyId) {
-<section class="min-h-[calc(100vh-72px)]">
-  <div class="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 lg:px-10">
+<section class="min-h-[calc(100vh-72px)] p-5 sm:p-8 lg:p-10">
     <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <div class="text-[10px] font-semibold tracking-[.16em] text-[#0a66c2]">
@@ -25,7 +24,7 @@
     <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</p>
     }
     <div class="mb-5 flex items-center justify-between border-b border-stone-200 pb-3">
-      <div class="rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#2864dc]">
+      <div class="rounded-xl px-4 py-2 text-sm font-medium text-[#2864dc]">
         Pages you manage · {{ companies().length }}
       </div>
       <span class="text-xs text-stone-400">Recently active</span>
@@ -85,7 +84,6 @@
       You have reached the maximum of 2 companies.
     </p>
     }
-  </div>
 </section>
 @if (companyDialog) {
 <div
@@ -214,7 +212,7 @@
 </div>
 } } @else if (selectedCompany; as company) {
 <div
-  class="flex bg-[#f1f4f8]"
+  class="flex"
   [ngClass]="
     selectedSection === 'jobs'
       ? 'h-[calc(100dvh-72px)] overflow-hidden'
@@ -245,14 +243,17 @@
     </div>
     <nav class="space-y-1" aria-label="Company navigation">
       @for (item of [{key:'overview',label:'Page
-      home',icon:'⌂'},{key:'jobs',label:'Jobs',icon:'◫'},{key:'projects',label:'Projects',icon:'▤'},{key:'employees',label:'Inbox',icon:'◯'},{key:'roles',label:'Insights',icon:'⌁'},{key:'groups',label:'Groups',icon:'▦'},{key:'settings',label:'Page
+      home',icon:'⌂'},{key:'jobs',label:'Jobs',icon:'◫'},{key:'projects',label:'Projects',icon:'▤'},{key:'employees',label:'Inbox',icon:'◯'},{key:'roles',label:'Insights',icon:'⌁'},{key:'groups',label:'Groups',icon:'▦'},{key:'employers',label:'Employers',icon:'♙'},{key:'settings',label:'Page
       settings',icon:'⚙'}]; track item.key) {
       <button
         class="nav-item w-full"
         [class.nav-active]="selectedSection === item.key"
-        (click)="item.key === 'overview' ? openPageHome() : item.key === 'projects' ? openPageProjects() : item.key === 'jobs' ? openPageJobs() : item.key === 'settings' ? openPageSettings() : item.key === 'groups' ? openPageGroups() : item.key === 'employees' ? openPageInbox() : selectedSection = $any(item.key)"
+        (click)="item.key === 'overview' ? openPageHome() : item.key === 'projects' ? openPageProjects() : item.key === 'jobs' ? openPageJobs() : item.key === 'settings' ? openPageSettings() : item.key === 'groups' ? openPageGroups() : item.key === 'employers' ? openPageEmployers() : item.key === 'employees' ? openPageInbox() : selectedSection = $any(item.key)"
       >
         <span>{{ item.icon }}</span>{{ item.label }}
+        @if (item.key === 'employers') {
+        <span class="ml-auto text-xs text-stone-400">{{ company.employees?.length || 0 }}</span>
+        }
       </button>
       }
     </nav>
@@ -293,29 +294,6 @@
         </button>
         }
       </nav>
-    </div>
-    <div class="mt-6 border-t border-stone-200 pt-5">
-      <div class="mb-3 px-3 text-[10px] font-semibold tracking-[.16em] text-stone-400">
-        EMPLOYEES
-      </div>
-      <div class="space-y-2 px-2">
-        @for (employee of (company.employees || []); track $index) {
-        <div class="flex items-center gap-2 rounded-lg px-2 py-1.5">
-          <span
-            class="grid size-7 shrink-0 place-items-center rounded-full bg-[#e8f3ff] text-[11px] font-semibold text-[#2864dc]"
-            >{{ creatorName(employee.userId).slice(0, 1).toUpperCase() }}</span
-          >
-          <span class="min-w-0 flex-1"
-            ><b class="block truncate text-xs text-stone-700">{{ creatorName(employee.userId) }}</b
-            ><small class="block text-[10px] text-stone-400 capitalize"
-              >{{ employee.role }}</small
-            ></span
-          >
-        </div>
-        } @empty {
-        <p class="px-2 text-xs text-stone-400">No employees yet.</p>
-        }
-      </div>
     </div>
     <button
       class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2864dc] px-3 py-3 text-sm font-semibold text-white"
@@ -757,6 +735,39 @@
                   >{{ applicant.status }}</span
                 >
               </div>
+              <div
+                class="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3"
+              >
+                <label class="text-xs font-medium text-stone-600"
+                  >Application stage
+                  <select
+                    class="ml-2 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs"
+                    [ngModel]="applicant.status === 'Submitted' ? 'New' : applicant.status"
+                    (ngModelChange)="updateApplicantStage(applicant, $event)"
+                    [ngModelOptions]="{standalone: true}"
+                  >
+                    @for (stage of applicantStages; track stage) {
+                    <option [value]="stage">{{ stage }}</option>
+                    }
+                  </select>
+                </label>
+                @if (applicant.status !== 'Shortlisted') {
+                <button
+                  type="button"
+                  class="rounded-lg border border-[#0a66c2] px-3 py-1.5 text-xs font-semibold text-[#0a66c2] hover:bg-[#e8f3ff]"
+                  (click)="updateApplicantStage(applicant, 'Shortlisted')"
+                >
+                  ☆ Shortlist
+                </button>
+                } @else { <span class="text-xs font-semibold text-[#0a66c2]">★ Shortlisted</span> }
+                <button
+                  type="button"
+                  class="rounded-lg px-3 py-1.5 text-xs font-semibold text-stone-600 hover:bg-stone-100"
+                  (click)="messageApplicant(applicant)"
+                >
+                  Message applicant
+                </button>
+              </div>
               @if (applicant.profile; as profile) {
               <div class="mt-4 grid gap-3 border-t border-stone-100 pt-4 text-sm sm:grid-cols-2">
                 <div>
@@ -814,6 +825,9 @@
               <p class="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500">
                 Applied {{ applicant.createdAt | date:'mediumDate' }}
               </p>
+              @if (applicant.status === 'Completed') {
+              <app-review-form [applicationId]="applicant._id" context="job"></app-review-form>
+              }
             </article>
             }
           </div>
@@ -1328,7 +1342,7 @@
           </article>
           } @empty {
           <p class="text-sm text-stone-500 sm:col-span-2 xl:col-span-3">
-            No employees are assigned to this group yet. Use Company settings to add or assign
+            No employees are assigned to this group yet. Use Employers to add or assign
             employees.
           </p>
           }
@@ -1345,11 +1359,11 @@
         </button>
         }
       </section>
-      } } @else if (selectedSection === 'settings') {
+      } } @else if (selectedSection === 'employers') {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">
-        <h1 class="text-2xl font-semibold">Company settings</h1>
+        <h1 class="text-2xl font-semibold">Employers</h1>
         <p class="mt-1 text-sm text-stone-500">
-          Organize employees into teams and manage their roles.
+          Invite employees, assign them to groups, and manage their roles.
         </p>
         @if (error()) {
         <p class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
@@ -1391,18 +1405,17 @@
               <option [value]="group._id">{{ group.name }}</option>
               }
             </select>
-            <select
-              multiple
-              class="h-12 rounded-lg border border-stone-200 px-2 py-1 text-xs"
-              [(ngModel)]="newEmployeeRoles"
-              name="newEmployeeRoles"
-              aria-label="Employee roles"
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-              <option value="recruiter">Recruiter</option>
-              <option value="hr">HR</option>
-            </select>
+            <details class="relative">
+              <summary class="profile-input cursor-pointer list-none">Roles: {{ roleSummary(newEmployeeRoles) }}</summary>
+              <div class="absolute z-20 mt-1 w-full rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
+                @for (role of ['member', 'admin', 'recruiter', 'hr']; track role) {
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-stone-50">
+                  <input type="checkbox" [checked]="newEmployeeRoles.includes(role)" (change)="newEmployeeRoles = toggleRole(newEmployeeRoles, role, $any($event.target).checked)" />
+                  <span class="capitalize">{{ role }}</span>
+                </label>
+                }
+              </div>
+            </details>
             <button
               type="submit"
               [disabled]="saving()"
@@ -1439,19 +1452,17 @@
               <option [value]="group._id">{{ group.name }}</option>
               }
             </select>
-            <select
-              multiple
-              class="h-20 rounded-lg border border-stone-200 px-2 py-2 text-xs"
-              [ngModel]="employee.roles || [employee.role || 'member']"
-              [name]="'employeeRoles-' + employeeId(employee.userId)"
-              (ngModelChange)="updateEmployeeRole(company._id, employeeId(employee.userId), $event)"
-            >
-              <option value="owner">Owner</option>
-              <option value="admin">Admin</option>
-              <option value="recruiter">Recruiter</option>
-              <option value="hr">HR</option>
-              <option value="member">Member</option>
-            </select>
+            <details class="relative">
+              <summary class="profile-input cursor-pointer list-none">Roles: {{ roleSummary(employee.roles || [employee.role || 'member']) }}</summary>
+              <div class="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
+                @for (role of ['owner', 'admin', 'recruiter', 'hr', 'member']; track role) {
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-stone-50">
+                  <input type="checkbox" [checked]="hasRole(employee.roles || [employee.role || 'member'], role)" (change)="updateEmployeeRole(company._id, employeeId(employee.userId), toggleRole(employee.roles || [employee.role || 'member'], role, $any($event.target).checked))" />
+                  <span class="capitalize">{{ role }}</span>
+                </label>
+                }
+              </div>
+            </details>
             <button
               type="button"
               class="text-xs text-red-600"
@@ -1465,12 +1476,41 @@
           }
         </div>
         <h3 class="mt-7 font-semibold">Add an existing employee</h3>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <input
-            class="profile-input flex-1"
-            [(ngModel)]="employeeEmail"
-            placeholder="Employee email"
-          /><select
+        <div class="mt-3 flex flex-wrap items-start gap-2">
+          <div class="relative min-w-[240px] flex-1">
+            <input
+              class="profile-input w-full"
+              [ngModel]="employeeEmail"
+              (ngModelChange)="searchExistingEmployees($event)"
+              placeholder="Search existing employees by name or email"
+              autocomplete="off"
+              role="combobox"
+              [attr.aria-expanded]="employeeSearchResults.length > 0"
+              aria-label="Search existing employees"
+            />
+            @if (!selectedExistingEmployee && employeeEmail.trim().length >= 2) {
+            <div class="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-stone-200 bg-white p-1 shadow-lg">
+              @if (employeeSearchLoading) {
+              <p class="px-3 py-2 text-sm text-stone-500">Searching…</p>
+              } @else if (employeeSearchError) {
+              <p class="px-3 py-2 text-sm text-red-600">{{ employeeSearchError }}</p>
+              } @else if (employeeSearchResults.length) {
+              @for (employee of employeeSearchResults; track employee._id) {
+              <button
+                type="button"
+                class="flex w-full flex-col rounded-lg px-3 py-2 text-left hover:bg-blue-50"
+                (click)="selectExistingEmployee(employee)"
+              >
+                <span class="text-sm font-medium text-stone-800">{{ employee.name }}</span>
+                <span class="text-xs text-stone-500">{{ employee.email }}</span>
+              </button>
+              }
+              } @else {
+              <p class="px-3 py-2 text-sm text-stone-500">No matching users found.</p>
+              }
+            </div>
+            }
+          </div><select
             class="profile-input w-auto"
             [(ngModel)]="employeeGroupId"
             name="newEmployeeGroup"
@@ -1479,23 +1519,120 @@
             @for (group of company.groups || []; track group._id) {
             <option [value]="group._id">{{ group.name }}</option>
             }</select
-          ><select
-            multiple
-            class="profile-input w-auto"
-            [(ngModel)]="employeeRoles"
-            name="newEmployeeRoles"
-          >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-            <option value="recruiter">Recruiter</option>
-            <option value="hr">HR</option></select
-          ><button
-            class="rounded-xl bg-[#2864dc] px-4 py-2 text-sm text-white"
+          ><details class="relative">
+            <summary class="profile-input cursor-pointer list-none">Roles: {{ roleSummary(employeeRoles) }}</summary>
+            <div class="absolute right-0 z-20 mt-1 w-52 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
+              @for (role of ['member', 'admin', 'recruiter', 'hr']; track role) {
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-stone-50">
+                <input type="checkbox" [checked]="employeeRoles.includes(role)" (change)="employeeRoles = toggleRole(employeeRoles, role, $any($event.target).checked)" />
+                <span class="capitalize">{{ role }}</span>
+              </label>
+              }
+            </div>
+          </details><button
+            type="button"
+            [disabled]="!selectedExistingEmployee || saving()"
+            class="h-[46px] shrink-0 whitespace-nowrap rounded-xl bg-[#2864dc] px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
             (click)="selected = company._id; addEmployee()"
           >
-            Add employee
+            {{ saving() ? 'Adding…' : 'Add employee' }}
           </button>
         </div>
+      </section>
+      } @else if (selectedSection === 'settings') {
+      <section class="rounded-2xl border border-stone-200 bg-white p-6">
+        <h1 class="text-2xl font-semibold">Company settings</h1>
+        <p class="mt-1 text-sm text-stone-500">Update how {{ company.name }} appears to people.</p>
+        @if (companySettingsNotice) {
+        <p class="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
+          {{ companySettingsNotice }}
+        </p>
+        }
+        @if (error()) {
+        <p class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {{ error() }}
+        </p>
+        }
+        <form class="mt-6 max-w-3xl space-y-5" (ngSubmit)="saveCompanySettings(company._id)">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="block text-sm font-medium text-stone-700">
+              Company name
+              <input
+                class="profile-input mt-1.5"
+                [(ngModel)]="companySettings.name"
+                name="companyName"
+                maxlength="120"
+                required
+              />
+            </label>
+            <label class="block text-sm font-medium text-stone-700">
+              Location
+              <input
+                class="profile-input mt-1.5"
+                [(ngModel)]="companySettings.location"
+                name="companyLocation"
+                maxlength="160"
+                placeholder="City, country"
+              />
+            </label>
+            <label class="block text-sm font-medium text-stone-700 sm:col-span-2">
+              Description
+              <textarea
+                class="profile-input mt-1.5 min-h-28 resize-y"
+                [(ngModel)]="companySettings.description"
+                name="companyDescription"
+                maxlength="160"
+                required
+              ></textarea>
+              <span class="mt-1 block text-xs font-normal text-stone-400">Up to 160 characters</span>
+            </label>
+            <label class="block text-sm font-medium text-stone-700 sm:col-span-2">
+              Website
+              <input
+                class="profile-input mt-1.5"
+                [(ngModel)]="companySettings.website"
+                name="companyWebsite"
+                type="url"
+                maxlength="2048"
+                placeholder="https://example.com"
+              />
+            </label>
+          </div>
+          <div>
+            <h2 class="text-sm font-medium text-stone-700">Company image</h2>
+            <p class="mt-1 text-xs text-stone-500">PNG, JPEG, WebP, or GIF up to 1.5 MB.</p>
+            <div class="mt-3 flex flex-wrap items-center gap-4">
+              <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 text-2xl font-semibold text-[#2864dc]">
+                @if (companySettings.logo) {
+                <img class="size-full object-cover" [src]="companySettings.logo" [alt]="companySettings.name + ' image'" />
+                } @else {
+                {{ companySettings.name.slice(0, 1).toUpperCase() || '?' }}
+                }
+              </span>
+              <div class="flex items-center gap-3">
+                <label class="cursor-pointer rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                  Choose image
+                  <input class="hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif" (change)="onCompanyLogoSelected($event)" />
+                </label>
+                @if (companySettings.logo) {
+                <button type="button" class="text-sm font-medium text-red-600 hover:underline" (click)="companySettings.logo = ''; companyLogoError = ''">
+                  Remove image
+                </button>
+                }
+              </div>
+            </div>
+            @if (companyLogoError) {
+            <p class="mt-2 text-sm text-red-600" role="alert">{{ companyLogoError }}</p>
+            }
+          </div>
+          <button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-xl bg-[#2864dc] px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ saving() ? 'Saving…' : 'Save company settings' }}
+          </button>
+        </form>
       </section>
       } @else {
       <section class="rounded-2xl border border-stone-200 bg-white p-6">

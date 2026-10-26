@@ -18,6 +18,7 @@ import {
   AddEmployeeDto,
   CreateCompanyDto,
   CreateEmployeeDto,
+  UpdateCompanyDto,
   UpdateEmployeeRoleDto,
 } from './company.dto';
 import { Profile, ProfileDocument } from '../profiles/profile.schema';
@@ -204,6 +205,63 @@ export class CompaniesService {
       employeeIds: [userId],
       employees: [{ userId, role: 'owner' }],
     });
+  }
+  async update(userId: string, companyId: string, input: UpdateCompanyDto) {
+    if (!Types.ObjectId.isValid(companyId)) throw new NotFoundException('Company not found.');
+    const company = await this.companies.findById(companyId);
+    if (!company || !this.canManage(company, userId))
+      throw new NotFoundException('Company not found or you cannot manage company settings.');
+
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (!name || name.length > 120)
+        throw new BadRequestException('Company name must be between 1 and 120 characters.');
+      company.name = name;
+    }
+    if (input.description !== undefined) {
+      const description = input.description.trim();
+      if (!description || description.length > 160)
+        throw new BadRequestException('Description must be between 1 and 160 characters.');
+      company.description = description;
+    }
+    if (input.website !== undefined) {
+      if (input.website.length > 2048) throw new BadRequestException('Website URL is too long.');
+      company.website = input.website.trim();
+    }
+    if (input.location !== undefined) {
+      if (input.location.length > 160) throw new BadRequestException('Location is too long.');
+      company.location = input.location.trim();
+    }
+    if (input.logo !== undefined) {
+      if (input.logo.length > 2_100_000)
+        throw new BadRequestException('Company image must be smaller than 1.5 MB.');
+      if (input.logo && !/^data:image\/(png|jpeg|webp|gif);base64,/i.test(input.logo))
+        throw new BadRequestException('Choose a PNG, JPEG, WebP, or GIF company image.');
+      company.logo = input.logo;
+    }
+    return company.save();
+  }
+  async searchEmployees(userId: string, companyId: string, query: string) {
+    if (!Types.ObjectId.isValid(companyId)) throw new NotFoundException('Company not found.');
+    const company = await this.companies.findById(companyId).select('ownerId employeeIds');
+    if (!company || !this.canManage(company, userId))
+      throw new NotFoundException('Company not found or you cannot manage employees.');
+    const term = typeof query === 'string' ? query.trim() : '';
+    if (term.length < 2) return [];
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const emailPrefix = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.users
+      .find({
+        _id: { $nin: company.employeeIds },
+        $or: [
+          { name: { $regex: `^${escaped}`, $options: 'i' } },
+          { email: { $regex: `^${emailPrefix}` } },
+        ],
+      })
+      .select('name email')
+      .sort({ name: 1 })
+      .limit(8)
+      .lean();
   }
   async addEmployee(userId: string, companyId: string, input: AddEmployeeDto) {
     const company = await this.companies.findOne({ _id: companyId });

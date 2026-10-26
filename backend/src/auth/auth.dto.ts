@@ -11,3 +11,12 @@ export class ConfirmInviteDto {
   token!: string;
   password!: string;
 }
+
+export class ConfirmEmailDto {
+  email!: string;
+  code!: string;
+}
+
+export class ResendConfirmationDto {
+  email!: string;
+}

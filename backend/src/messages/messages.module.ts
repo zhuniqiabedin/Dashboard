@@ -7,6 +7,19 @@ import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
 import { MessagesGateway } from './messages.gateway';
 import { User, UserSchema } from '../users/user.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
 
-@Module({ imports: [AuthModule, MongooseModule.forFeature([{ name: Conversation.name, schema: ConversationSchema }, { name: Company.name, schema: CompanySchema }, { name: User.name, schema: UserSchema }])], controllers: [MessagesController], providers: [MessagesService, MessagesGateway] })
+@Module({
+  imports: [
+    AuthModule,
+    NotificationsModule,
+    MongooseModule.forFeature([
+      { name: Conversation.name, schema: ConversationSchema },
+      { name: Company.name, schema: CompanySchema },
+      { name: User.name, schema: UserSchema },
+    ]),
+  ],
+  controllers: [MessagesController],
+  providers: [MessagesService, MessagesGateway],
+})
 export class MessagesModule {}

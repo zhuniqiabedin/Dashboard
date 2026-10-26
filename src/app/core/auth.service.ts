@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, Subject, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type AuthUser = { id: string; name: string; email: string; photo?: string };
 export type AuthResponse = { accessToken: string; user: AuthUser };
+export type RegistrationResponse = { confirmationRequired: true; email: string };
 
-const API_URL = 'http://localhost:3000';
 const USER_KEY = 'career-space-user';
 const TOKEN_KEY = 'career-space-token';
 
@@ -18,14 +19,24 @@ export class AuthService {
 
   login(email: string, password: string): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${API_URL}/auth/login`, { email, password })
+      .post<AuthResponse>(`${environment.apiUrl}/auth/login`, { email, password })
       .pipe(tap((response) => this.saveSession(response)));
   }
 
-  register(name: string, email: string, password: string): Observable<AuthResponse> {
-    return this.http
-      .post<AuthResponse>(`${API_URL}/auth/register`, { name, email, password })
-      .pipe(tap((response) => this.saveSession(response)));
+  register(name: string, email: string, password: string): Observable<RegistrationResponse> {
+    return this.http.post<RegistrationResponse>(`${environment.apiUrl}/auth/register`, {
+      name,
+      email,
+      password,
+    });
+  }
+
+  confirmEmail(email: string, code: string): Observable<{ ok: true }> {
+    return this.http.post<{ ok: true }>(`${environment.apiUrl}/auth/confirm-email`, { email, code });
+  }
+
+  resendConfirmation(email: string): Observable<{ ok: true }> {
+    return this.http.post<{ ok: true }>(`${environment.apiUrl}/auth/resend-confirmation`, { email });
   }
 
   get token(): string | null {

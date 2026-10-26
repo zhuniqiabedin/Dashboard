@@ -4,11 +4,12 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
+import { ReviewFormComponent } from '../../shared/review-form/review-form.component';
 @Component({
   selector: 'app-applied-jobs',
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: ` <section class="mx-auto max-w-5xl py-8">
+  imports: [CommonModule, RouterLink, ReviewFormComponent],
+  template: ` <section class="mx-auto max-w-5xl rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8">
     <h1 class="text-3xl font-semibold">Applied jobs</h1>
     <p class="mt-2 text-sm text-stone-500">Your submitted job applications.</p>
     @if (error()) {
@@ -31,6 +32,9 @@ import { environment } from '../../../environments/environment';
               {{ application.job?.location }} · {{ application.status }} · Applied
               {{ application.createdAt | date: 'mediumDate' }}
             </p>
+            @if (application.status === 'Completed') {
+              <app-review-form [applicationId]="application._id" context="job"></app-review-form>
+            }
           </article>
         } @empty {
           <p class="rounded-xl border bg-white p-6 text-stone-500 sm:col-span-2">

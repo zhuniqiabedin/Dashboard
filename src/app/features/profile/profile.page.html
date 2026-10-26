@@ -170,6 +170,73 @@
       </section>
 
       <section class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-8">
+        <h2 class="text-lg font-semibold">Work preferences &amp; visibility</h2>
+        <p class="mt-1 text-sm text-stone-500">
+          Help companies find work that fits what you’re looking for.
+        </p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <label class="block text-sm font-medium"
+            >Availability
+            <select
+              name="availability"
+              [(ngModel)]="profile.availability"
+              class="profile-input mt-1.5 bg-white"
+            >
+              <option>Open to opportunities</option>
+              <option>Open to projects</option>
+              <option>Not looking</option>
+            </select>
+          </label>
+          <label class="block text-sm font-medium"
+            >Workplace preference
+            <select
+              name="preferredWorkplace"
+              [(ngModel)]="profile.preferredWorkplace"
+              class="profile-input mt-1.5 bg-white"
+            >
+              <option>Any</option>
+              <option>Remote</option>
+              <option>Hybrid</option>
+              <option>Onsite</option>
+            </select>
+          </label>
+          <label class="block text-sm font-medium sm:col-span-2"
+            >Work types
+            <select
+              multiple
+              name="preferredWorkTypes"
+              [(ngModel)]="profile.preferredWorkTypes"
+              class="profile-input mt-1.5 min-h-28 bg-white"
+            >
+              <option value="Permanent">Permanent role</option>
+              <option value="Contract">Contract</option>
+              <option value="Project">Project work</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Internship">Internship</option>
+            </select>
+            <span class="mt-1 block text-xs font-normal text-stone-500"
+              >Hold Ctrl (Windows) or Command (Mac) to select more than one.</span
+            >
+          </label>
+          <label class="flex items-start gap-3 rounded-xl bg-stone-50 p-4 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              name="isPublic"
+              [(ngModel)]="profile.isPublic"
+              class="mt-0.5 accent-[#0a66c2]"
+            />
+            <span
+              ><b class="block">Show my profile to companies</b
+              ><span class="mt-1 block text-xs font-normal text-stone-500"
+                >Public profiles can appear in company candidate matches. Your email and phone stay
+                private until you apply or contact a company.</span
+              ></span
+            >
+          </label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-8">
         <h2 class="text-lg font-semibold">Experience &amp; education</h2>
         <p class="mt-1 text-sm text-stone-500">Add a short overview of your background.</p>
         <div class="mt-5 space-y-4">

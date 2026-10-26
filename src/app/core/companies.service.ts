@@ -22,6 +22,7 @@ export type Company = {
     roles?: ('owner' | 'admin' | 'recruiter' | 'hr' | 'member')[];
   }[];
 };
+export type ExistingEmployee = { _id: string; name: string; email: string };
 export type PageProject = {
   title: string;
   location?: string;
@@ -76,15 +77,51 @@ export class CompaniesService {
         error: (error) => this.error.set(error.error?.message || 'Could not create company.'),
       });
   }
-  addEmployee(id: string, email: string, roles: string[] = ['member'], groupId?: string): void {
+  updateCompany(
+    id: string,
+    input: Pick<Company, 'name' | 'description' | 'website' | 'location' | 'logo'>,
+    onSaved?: () => void,
+  ): void {
+    this.error.set('');
+    this.saving.set(true);
+    this.http
+      .patch(`${environment.apiUrl}/companies/${id}`, input, { headers: this.headers() })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.load();
+          onSaved?.();
+        },
+        error: (error) => this.error.set(error.error?.message || 'Could not update company settings.'),
+      });
+  }
+  searchEmployees(id: string, query: string) {
+    return this.http.get<ExistingEmployee[]>(
+      `${environment.apiUrl}/companies/${id}/employees/search`,
+      { headers: this.headers(), params: { q: query } },
+    );
+  }
+  addEmployee(
+    id: string,
+    email: string,
+    roles: string[] = ['member'],
+    groupId?: string,
+    onAdded?: () => void,
+  ): void {
+    this.error.set('');
+    this.saving.set(true);
     this.http
       .post(
         `${environment.apiUrl}/companies/${id}/employees`,
         { email, roles, ...(groupId ? { groupId } : {}) },
         { headers: this.headers() },
       )
+      .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        next: () => this.load(),
+        next: () => {
+          this.load();
+          onAdded?.();
+        },
         error: (error) => this.error.set(error.error?.message || 'Could not add employee.'),
       });
   }

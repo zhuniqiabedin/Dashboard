@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Branches } from '../branches.enum';
@@ -8,6 +13,7 @@ import { Company, CompanyDocument } from '../companies/company.schema';
 import { Profile, ProfileDocument } from '../profiles/profile.schema';
 import { ProjectApplication, ProjectApplicationDocument } from './project-application.schema';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Review, ReviewDocument } from '../reviews/review.schema';
 
 @Injectable()
 export class ProjectsService {
@@ -15,7 +21,9 @@ export class ProjectsService {
     @InjectModel(Project.name) private readonly projects: Model<ProjectDocument>,
     @InjectModel(Company.name) private readonly companies: Model<CompanyDocument>,
     @InjectModel(Profile.name) private readonly profiles: Model<ProfileDocument>,
-    @InjectModel(ProjectApplication.name) private readonly applications: Model<ProjectApplicationDocument>,
+    @InjectModel(ProjectApplication.name)
+    private readonly applications: Model<ProjectApplicationDocument>,
+    @InjectModel(Review.name) private readonly reviews: Model<ReviewDocument>,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -29,17 +37,38 @@ export class ProjectsService {
       (project.skills ?? []).map((skill) => skill.toLowerCase().trim()).filter(Boolean),
     );
 
-    console.log(required, "requird")
+    console.log(required, 'requird');
     if (!required.size) return [];
     const profiles = await this.profiles
-      .find({})
-      .select('userId name headline location skills photo')
+      .find({
+        isPublic: { $ne: false },
+        availability: { $ne: 'Not looking' },
+        $or: [
+          { preferredWorkTypes: { $in: ['Project', 'Freelance', 'Contract'] } },
+          { preferredWorkTypes: { $exists: false } },
+        ],
+      })
+      .select(
+        'userId name headline location skills photo availability preferredWorkTypes preferredWorkplace',
+      )
       .lean();
     const userProjects = await this.projects
       .find({ $or: [{ pageId: { $exists: false } }, { pageId: null }] })
       .select('userId title summary skills hourlyRate')
       .lean();
-      console.log(profiles, "profiles")
+    const userIds = profiles.map((profile) => profile.userId);
+    const feedback = await this.reviews
+      .find({ subjectUserId: { $in: userIds } })
+      .select('subjectUserId overall')
+      .lean();
+    const ratings = new Map<string, { count: number; total: number }>();
+    for (const review of feedback) {
+      const key = String(review.subjectUserId);
+      const rating = ratings.get(key) ?? { count: 0, total: 0 };
+      rating.count += 1;
+      rating.total += review.overall;
+      ratings.set(key, rating);
+    }
     return profiles
       .map((profile) => {
         const rawSkills = String(profile.skills ?? '').trim();
@@ -52,32 +81,54 @@ export class ProjectsService {
         }
         skills = skills.map((skill) => skill.toLowerCase().trim()).filter(Boolean);
         const matchedSkills = skills.filter((skill) => required.has(skill));
-        console.log(matchedSkills, "matchedSkills")
         return {
           ...profile,
           projects: userProjects
             .filter((item) => String(item.userId) === String(profile.userId))
-            .map((item) => ({ title: item.title, summary: item.summary, skills: item.skills, hourlyRate: item.hourlyRate ?? 0 })),
+            .map((item) => ({
+              title: item.title,
+              summary: item.summary,
+              skills: item.skills,
+              hourlyRate: item.hourlyRate ?? 0,
+            })),
           pageId: String(project.pageId),
           projectId,
           match: Math.round((matchedSkills.length / required.size) * 100),
           matchedSkills,
+          reviewCount: ratings.get(String(profile.userId))?.count ?? 0,
+          averageRating: ratings.has(String(profile.userId))
+            ? Number(
+                (
+                  ratings.get(String(profile.userId))!.total /
+                  ratings.get(String(profile.userId))!.count
+                ).toFixed(1),
+              )
+            : null,
         };
       })
       .filter((profile) => profile.match >= 50)
       .sort((a, b) => b.match - a.match);
   }
 
-  async matchingProjectsForEmployee(userId: string, pageId: string, employeeId: string): Promise<Record<string, unknown>[]> {
+  async matchingProjectsForEmployee(
+    userId: string,
+    pageId: string,
+    employeeId: string,
+  ): Promise<Record<string, unknown>[]> {
     if (!Types.ObjectId.isValid(pageId) || !Types.ObjectId.isValid(employeeId)) {
       throw new BadRequestException('Invalid company or employee ID.');
     }
-    const company = await this.companies.findOne({ _id: pageId, $or: [{ ownerId: userId }, { employeeIds: userId }] }).lean();
+    const company = await this.companies
+      .findOne({ _id: pageId, $or: [{ ownerId: userId }, { employeeIds: userId }] })
+      .lean();
     if (!company) throw new ForbiddenException('You do not have access to this company.');
     if (!company.employeeIds.some((id) => id.toString() === employeeId)) {
       throw new ForbiddenException('You can only search projects for an employee of this company.');
     }
-    const profile = await this.profiles.findOne({ userId: employeeId }).select('name skills').lean();
+    const profile = await this.profiles
+      .findOne({ userId: employeeId })
+      .select('name skills')
+      .lean();
     const rawSkills = String(profile?.skills ?? '').trim();
     let employeeSkills: string[];
     try {
@@ -86,31 +137,49 @@ export class ProjectsService {
     } catch {
       employeeSkills = rawSkills.split(',');
     }
-    const skillSet = new Set(employeeSkills.map((skill) => skill.toLowerCase().trim()).filter(Boolean));
+    const skillSet = new Set(
+      employeeSkills.map((skill) => skill.toLowerCase().trim()).filter(Boolean),
+    );
     const now = new Date();
-    const published = await this.projects.find({
-      pageId: { $exists: true, $nin: [null, new Types.ObjectId(pageId)] },
-      isPublished: true,
-      $or: [{ publishAt: { $exists: false } }, { publishAt: null }, { publishAt: { $lte: now } }],
-      $and: [{ $or: [{ unpublishAt: { $exists: false } }, { unpublishAt: null }, { unpublishAt: { $gt: now } }] }],
-    }).populate('pageId', 'name').sort({ createdAt: -1 }).lean();
-    return published.map((project: any) => {
-      const matchedSkills = (project.skills ?? []).filter((skill: string) => skillSet.has(String(skill).toLowerCase().trim()));
-      return {
-        id: project._id.toString(),
-        employeeName: profile?.name || 'Company employee',
-        title: project.title,
-        summary: project.summary,
-        details: project.details,
-        category: project.category,
-        branch: project.branch,
-        skills: project.skills ?? [],
-        pageId: project.pageId?._id?.toString(),
-        pageName: project.pageId?.name ?? 'Company',
-        matchedSkills,
-        match: skillSet.size ? Math.round((matchedSkills.length / skillSet.size) * 100) : 0,
-      };
-    }).sort((a, b) => b.match - a.match);
+    const published = await this.projects
+      .find({
+        pageId: { $exists: true, $nin: [null, new Types.ObjectId(pageId)] },
+        isPublished: true,
+        $or: [{ publishAt: { $exists: false } }, { publishAt: null }, { publishAt: { $lte: now } }],
+        $and: [
+          {
+            $or: [
+              { unpublishAt: { $exists: false } },
+              { unpublishAt: null },
+              { unpublishAt: { $gt: now } },
+            ],
+          },
+        ],
+      })
+      .populate('pageId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+    return published
+      .map((project: any) => {
+        const matchedSkills = (project.skills ?? []).filter((skill: string) =>
+          skillSet.has(String(skill).toLowerCase().trim()),
+        );
+        return {
+          id: project._id.toString(),
+          employeeName: profile?.name || 'Company employee',
+          title: project.title,
+          summary: project.summary,
+          details: project.details,
+          category: project.category,
+          branch: project.branch,
+          skills: project.skills ?? [],
+          pageId: project.pageId?._id?.toString(),
+          pageName: project.pageId?.name ?? 'Company',
+          matchedSkills,
+          match: skillSet.size ? Math.round((matchedSkills.length / skillSet.size) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.match - a.match);
   }
 
   async listForPage(userId: string, pageId: string): Promise<Record<string, unknown>[]> {
@@ -149,26 +218,50 @@ export class ProjectsService {
   async apply(userId: string, id: string, cvSnapshot: Record<string, unknown> = {}) {
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid project ID.');
     const project = await this.projects.findById(id).lean();
-    if (!project || !project.pageId || !this.isCurrentlyPublished(project)) throw new NotFoundException('This project is not accepting applications.');
+    if (!project || !project.pageId || !this.isCurrentlyPublished(project))
+      throw new NotFoundException('This project is not accepting applications.');
     const profile = await this.profiles.findOne({ userId }).lean();
     if (!profile) throw new BadRequestException('Complete your profile before applying.');
     const safeCv = cvSnapshot && typeof cvSnapshot === 'object' ? cvSnapshot : {};
     let application;
     try {
-      application = await this.applications.create({ projectId: project._id, pageId: project.pageId, userId, profileSnapshot: profile, cvSnapshot: safeCv });
+      application = await this.applications.create({
+        projectId: project._id,
+        pageId: project.pageId,
+        userId,
+        profileSnapshot: profile,
+        cvSnapshot: safeCv,
+      });
     } catch (error) {
       if ((error as any)?.code === 11000) return { status: 'Submitted', alreadyApplied: true };
       throw error;
     }
-    await this.notifications.application(project.pageId, 'project_application', project._id, application._id, profile.name || 'Someone');
+    await this.notifications.application(
+      project.pageId,
+      'project_application',
+      project._id,
+      application._id,
+      profile.name || 'Someone',
+    );
     return { id: application.id, status: application.status };
   }
 
-  async applyForEmployee(applyingUserId: string, projectId: string, pageId: string, employeeId: string) {
-    if (!Types.ObjectId.isValid(projectId) || !Types.ObjectId.isValid(pageId) || !Types.ObjectId.isValid(employeeId)) {
+  async applyForEmployee(
+    applyingUserId: string,
+    projectId: string,
+    pageId: string,
+    employeeId: string,
+  ) {
+    if (
+      !Types.ObjectId.isValid(projectId) ||
+      !Types.ObjectId.isValid(pageId) ||
+      !Types.ObjectId.isValid(employeeId)
+    ) {
       throw new BadRequestException('Invalid project, company, or employee ID.');
     }
-    const company = await this.companies.findOne({ _id: pageId, $or: [{ ownerId: applyingUserId }, { employeeIds: applyingUserId }] }).lean();
+    const company = await this.companies
+      .findOne({ _id: pageId, $or: [{ ownerId: applyingUserId }, { employeeIds: applyingUserId }] })
+      .lean();
     if (!company) throw new ForbiddenException('You do not have access to this company.');
     if (!company.employeeIds.some((id) => id.toString() === employeeId)) {
       throw new ForbiddenException('You can only apply for an employee of this company.');
@@ -178,10 +271,13 @@ export class ProjectsService {
       throw new NotFoundException('This project is not accepting applications.');
     }
     if (project.pageId.toString() === pageId) {
-      throw new ForbiddenException('You cannot apply for an employee to a project published by your own company.');
+      throw new ForbiddenException(
+        'You cannot apply for an employee to a project published by your own company.',
+      );
     }
     const profile = await this.profiles.findOne({ userId: employeeId }).lean();
-    if (!profile) throw new BadRequestException('The selected employee needs a profile before applying.');
+    if (!profile)
+      throw new BadRequestException('The selected employee needs a profile before applying.');
     try {
       const application = await this.applications.create({
         projectId: project._id,
@@ -190,7 +286,13 @@ export class ProjectsService {
         profileSnapshot: profile,
         cvSnapshot: { skills: profile.skills ?? '' },
       });
-      await this.notifications.application(project.pageId, 'project_application', project._id, application._id, profile.name || 'Someone');
+      await this.notifications.application(
+        project.pageId,
+        'project_application',
+        project._id,
+        application._id,
+        profile.name || 'Someone',
+      );
       return { id: application.id, status: application.status };
     } catch (error) {
       if ((error as any)?.code === 11000) return { status: 'Submitted', alreadyApplied: true };
@@ -199,7 +301,12 @@ export class ProjectsService {
   }
 
   async listMyApplications(userId: string) {
-    const apps = await this.applications.find({ userId }).sort({ createdAt: -1 }).populate('projectId').populate('pageId', 'name').lean();
+    const apps = await this.applications
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .populate('projectId')
+      .populate('pageId', 'name')
+      .lean();
     return apps.map((app: any) => ({ ...app, project: app.projectId, company: app.pageId }));
   }
 
@@ -207,31 +314,98 @@ export class ProjectsService {
     const project = await this.requireCompanyProject(userId, id);
     const company = await this.companies.findById(project.pageId).lean();
     const memberRoles = company?.employees?.find((e: any) => String(e.userId) === userId);
-    const roles = Array.isArray((memberRoles as any)?.roles) ? (memberRoles as any).roles : [(memberRoles as any)?.role];
-    if (String(company?.ownerId) !== userId && !roles.some((role: string) => ['admin', 'recruiter', 'hr'].includes(role))) throw new ForbiddenException('You cannot view applicant details.');
-    return this.applications.find({ projectId: project._id }).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
+    const roles = Array.isArray((memberRoles as any)?.roles)
+      ? (memberRoles as any).roles
+      : [(memberRoles as any)?.role];
+    if (
+      String(company?.ownerId) !== userId &&
+      !roles.some((role: string) => ['admin', 'recruiter', 'hr'].includes(role))
+    )
+      throw new ForbiddenException('You cannot view applicant details.');
+    return this.applications
+      .find({ projectId: project._id })
+      .populate('userId', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
   }
 
-  listPublished(): Promise<Record<string, unknown>[]> {
+  async updateApplicationStatus(
+    userId: string,
+    projectId: string,
+    applicationId: string,
+    status: string,
+  ) {
+    const project = await this.requireCompanyProject(userId, projectId);
+    const company: any = await this.companies.findById(project.pageId).lean();
+    const employee: any = company?.employees?.find((item: any) => String(item.userId) === userId);
+    const roles: string[] = Array.isArray(employee?.roles) ? employee.roles : [employee?.role];
+    if (
+      String(company?.ownerId) !== userId &&
+      !roles.some((role) => ['admin', 'recruiter', 'hr'].includes(role))
+    )
+      throw new ForbiddenException('You cannot manage applicants.');
+    const allowed = [
+      'New',
+      'Shortlisted',
+      'Contacted',
+      'Interviewing',
+      'Selected',
+      'Rejected',
+      'Completed',
+    ];
+    if (!allowed.includes(status))
+      throw new BadRequestException('Choose a valid application stage.');
+    const application = await this.applications.findOneAndUpdate(
+      { _id: applicationId, projectId: project._id },
+      { $set: { status } },
+      { new: true, runValidators: true },
+    );
+    if (!application) throw new NotFoundException('Application not found.');
+    await this.notifications.applicationStatus(application.userId, 'project', project._id, status);
+    return application;
+  }
+
+  async listPublished(userId: string): Promise<Record<string, unknown>[]> {
     const now = new Date();
-    return this.projects
+    const memberCompanies = await this.companies
+      .find({ $or: [{ ownerId: userId }, { employeeIds: userId }] })
+      .select('_id')
+      .lean();
+    const companyIds = memberCompanies.map((company) => company._id);
+    const projects = await this.projects
       .find({
-        pageId: { $exists: true, $ne: null },
-        isPublished: true,
-        $or: [{ publishAt: { $exists: false } }, { publishAt: { $lte: now } }],
-        $and: [{ $or: [{ unpublishAt: { $exists: false } }, { unpublishAt: { $gt: now } }] }],
+        $or: [
+          {
+            pageId: { $exists: true, $ne: null },
+            isPublished: true,
+            $and: [
+              { $or: [{ publishAt: { $exists: false } }, { publishAt: null }, { publishAt: { $lte: now } }] },
+              { $or: [{ unpublishAt: { $exists: false } }, { unpublishAt: null }, { unpublishAt: { $gt: now } }] },
+            ],
+          },
+          { pageId: { $in: companyIds }, isPublished: { $ne: true } },
+        ],
       })
       .populate<{ pageId: { _id: Types.ObjectId; name: string } | null }>('pageId', 'name')
       .sort({ createdAt: -1 })
-      .lean()
-      .then((projects) =>
-        projects.filter((project) => project.pageId).map(({ _id, pageId, ...project }) => ({ ...project, id: _id.toString(), pageId: pageId!._id.toString(), pageName: pageId!.name })),
-      );
+      .lean();
+    return projects
+      .filter((project) => project.pageId)
+      .map(({ _id, pageId, ...project }) => ({
+        ...project,
+        id: _id.toString(),
+        pageId: pageId!._id.toString(),
+        pageName: pageId!.name,
+        isCompanyDraft: project.isPublished !== true,
+      }));
   }
 
   private async requireCompany(userId: string, pageId?: string) {
-    if (!pageId || !Types.ObjectId.isValid(pageId)) throw new ForbiddenException('Projects must belong to a company you manage.');
-    const company = await this.companies.findOne({ _id: pageId, $or: [{ ownerId: userId }, { employeeIds: userId }] }).lean();
+    if (!pageId || !Types.ObjectId.isValid(pageId))
+      throw new ForbiddenException('Projects must belong to a company you manage.');
+    const company = await this.companies
+      .findOne({ _id: pageId, $or: [{ ownerId: userId }, { employeeIds: userId }] })
+      .lean();
     if (!company) throw new ForbiddenException('You do not have access to this company.');
     return company;
   }
@@ -254,12 +428,51 @@ export class ProjectsService {
       { _id: company._id },
       { $addToSet: { projects: project._id, projectIds: project._id } },
     );
+    if (project.isPublished) {
+      const candidates = await this.profiles
+        .find({
+          isPublic: { $ne: false },
+          availability: { $ne: 'Not looking' },
+          $or: [
+            { preferredWorkTypes: { $in: ['Project', 'Freelance', 'Contract'] } },
+            { preferredWorkTypes: { $exists: false } },
+          ],
+        })
+        .select('userId skills')
+        .lean();
+      const required = new Set(
+        (project.skills ?? []).map((skill) => skill.toLowerCase().trim()).filter(Boolean),
+      );
+      const matches = candidates
+        .filter((profile) => {
+          let skills = String(profile.skills ?? '').split(',');
+          try {
+            const parsed = JSON.parse(String(profile.skills ?? ''));
+            if (Array.isArray(parsed)) skills = parsed.map(String);
+          } catch {
+            /* comma-separated legacy profile */
+          }
+          const found = skills
+            .map((skill) => skill.toLowerCase().trim())
+            .filter((skill) => required.has(skill));
+          return required.size > 0 && found.length / required.size >= 0.5;
+        })
+        .map((profile) => profile.userId);
+      await this.notifications.matchingOpportunity(
+        matches,
+        'project',
+        project._id,
+        project.title,
+        company._id,
+      );
+    }
     return project;
   }
 
   async update(userId: string, id: string, input: UpdateProjectDto) {
     const existing = await this.requireCompanyProject(userId, id);
-    if (input.pageId && input.pageId !== existing.pageId?.toString()) throw new BadRequestException('A project cannot be moved to another company.');
+    if (input.pageId && input.pageId !== existing.pageId?.toString())
+      throw new BadRequestException('A project cannot be moved to another company.');
     const project = await this.projects
       .findOneAndUpdate(
         { _id: id, pageId: existing.pageId },
@@ -272,6 +485,44 @@ export class ProjectsService {
       { _id: existing.pageId },
       { $addToSet: { projects: existing._id, projectIds: existing._id } },
     );
+    if (!existing.isPublished && project.isPublished) {
+      const candidates = await this.profiles
+        .find({
+          isPublic: { $ne: false },
+          availability: { $ne: 'Not looking' },
+          $or: [
+            { preferredWorkTypes: { $in: ['Project', 'Freelance', 'Contract'] } },
+            { preferredWorkTypes: { $exists: false } },
+          ],
+        })
+        .select('userId skills')
+        .lean();
+      const required = new Set(
+        (project.skills ?? []).map((skill) => skill.toLowerCase().trim()).filter(Boolean),
+      );
+      const matches = candidates
+        .filter((profile) => {
+          let skills = String(profile.skills ?? '').split(',');
+          try {
+            const parsed = JSON.parse(String(profile.skills ?? ''));
+            if (Array.isArray(parsed)) skills = parsed.map(String);
+          } catch {
+            /* legacy comma-separated skills */
+          }
+          const found = skills
+            .map((skill) => skill.toLowerCase().trim())
+            .filter((skill) => required.has(skill));
+          return required.size > 0 && found.length / required.size >= 0.5;
+        })
+        .map((profile) => profile.userId);
+      await this.notifications.matchingOpportunity(
+        matches,
+        'project',
+        project._id,
+        project.title,
+        existing.pageId!,
+      );
+    }
     return project;
   }
 

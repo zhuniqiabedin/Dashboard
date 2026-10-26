@@ -2,17 +2,31 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  randomBytes,
+  randomInt,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from 'node:crypto';
 import { promisify } from 'node:util';
-import { AuthDto, ConfirmInviteDto, RegisterDto } from './auth.dto';
+import {
+  AuthDto,
+  ConfirmEmailDto,
+  ConfirmInviteDto,
+  RegisterDto,
+  ResendConfirmationDto,
+} from './auth.dto';
 import { User, UserDocument } from '../users/user.schema';
 import { Profile, ProfileDocument } from '../profiles/profile.schema';
 import { Branches } from '../branches.enum';
 import { TokenService } from './token.service';
+import { EmailService } from '../mail/email.service';
 
 const scrypt = promisify(scryptCallback);
 
@@ -22,6 +36,7 @@ export class AuthService {
     @InjectModel(User.name) private readonly users: Model<UserDocument>,
     @InjectModel(Profile.name) private readonly profiles: Model<ProfileDocument>,
     private readonly tokenService: TokenService,
+    private readonly email: EmailService,
   ) {}
 
   async register(input: RegisterDto) {
@@ -34,15 +49,92 @@ export class AuthService {
     const email = input.email.trim().toLowerCase();
     if (await this.users.exists({ email }))
       throw new ConflictException('That email is already registered.');
+    await this.email.verifyConfiguration();
     const passwordHash = await this.hashPassword(input.password);
-    const user = await this.users.create({ name: input.name.trim(), email, passwordHash });
-    await this.profiles.create({
-      userId: user._id,
-      name: user.name,
+    const name = input.name.trim();
+    const code = String(randomInt(100000, 1000000));
+    let user: UserDocument;
+    try {
+      user = await this.users.create({
+        name,
+        email,
+        passwordHash,
+        emailVerified: false,
+        emailConfirmationCodeHash: createHash('sha256').update(code).digest('hex'),
+        emailConfirmationCodeExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        emailConfirmationCodeAttempts: 0,
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000)
+        throw new ConflictException('That email is already registered.');
+      throw error;
+    }
+    let profileCreated = false;
+    try {
+      await this.profiles.create({ userId: user._id, name, email, branch: Branches.Other });
+      profileCreated = true;
+      await this.email.sendRegistrationConfirmation(email, name, code);
+    } catch {
+      if (profileCreated) await this.profiles.deleteOne({ userId: user._id });
+      await this.users.deleteOne({ _id: user._id });
+      throw new ServiceUnavailableException(
+        'We could not send the confirmation email. Check your email settings and try again.',
+      );
+    }
+    return { confirmationRequired: true, email };
+  }
+
+  async confirmRegistrationEmail(input: ConfirmEmailDto) {
+    if (!input || typeof input !== 'object')
+      throw new BadRequestException('Confirmation data is required.');
+    const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(input.code ?? ''))
+      throw new BadRequestException('Enter the email address and 6-digit confirmation code.');
+    const user = await this.users
+      .findOne({ email, emailVerified: false })
+      .select('+emailConfirmationCodeHash +emailConfirmationCodeExpiresAt +emailConfirmationCodeAttempts');
+    if (!user || !user.emailConfirmationCodeHash || !user.emailConfirmationCodeExpiresAt ||
+      user.emailConfirmationCodeExpiresAt <= new Date())
+      throw new BadRequestException('The confirmation code is invalid or expired.');
+    if ((user.emailConfirmationCodeAttempts ?? 0) >= 5)
+      throw new BadRequestException('Too many incorrect codes. Request a new confirmation code.');
+    const submittedHash = createHash('sha256').update(input.code).digest();
+    const savedHash = Buffer.from(user.emailConfirmationCodeHash, 'hex');
+    if (!timingSafeEqual(submittedHash, savedHash)) {
+      user.emailConfirmationCodeAttempts = (user.emailConfirmationCodeAttempts ?? 0) + 1;
+      await user.save();
+      throw new BadRequestException('The confirmation code is incorrect.');
+    }
+    user.emailVerified = true;
+    user.emailConfirmationCodeHash = undefined;
+    user.emailConfirmationCodeExpiresAt = undefined;
+    user.emailConfirmationCodeAttempts = 0;
+    await user.save();
+    return { ok: true };
+  }
+
+  async resendRegistrationConfirmation(input: ResendConfirmationDto) {
+    const email = typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new BadRequestException('Enter a valid email address.');
+    const user = await this.users.findOne({
       email,
-      branch: Branches.Other,
+      emailVerified: false,
+      emailConfirmationCodeHash: { $exists: true },
     });
-    return this.createSession(user);
+    if (!user) return { ok: true };
+    await this.email.verifyConfiguration();
+    const code = String(randomInt(100000, 1000000));
+    user.emailConfirmationCodeHash = createHash('sha256').update(code).digest('hex');
+    user.emailConfirmationCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.emailConfirmationCodeAttempts = 0;
+    await user.save();
+    try {
+      await this.email.sendRegistrationConfirmation(email, user.name, code);
+    } catch {
+      throw new ServiceUnavailableException('Could not send a new confirmation email. Try again.');
+    }
+    return { ok: true };
   }
 
   async login(input: AuthDto) {

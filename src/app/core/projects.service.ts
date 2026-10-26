@@ -23,6 +23,7 @@ export type Project = {
   skills: string[];
   hourlyRate?: number;
   isPublished?: boolean;
+  isCompanyDraft?: boolean;
   publishAt?: string;
   unpublishAt?: string;
 };
@@ -90,7 +91,8 @@ export class ProjectsService {
                   ...project,
                   id: project.id ?? project._id ?? crypto.randomUUID(),
                   skills: project.skills ?? [],
-                  isPublished: true,
+                  isPublished: project.isPublished ?? true,
+                  isCompanyDraft: project.isCompanyDraft ?? false,
                 }) as Project,
             ),
           ),

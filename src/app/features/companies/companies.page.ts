@@ -1,6 +1,6 @@
 import { parseSkills } from '../jobs/job-matching';
 import { Component, effect, Signal, signal, WritableSignal } from '@angular/core';
-import { CompaniesService, Company, PageJob } from '../../core/companies.service';
+import { CompaniesService, Company, ExistingEmployee, PageJob } from '../../core/companies.service';
 import { PostalLocationService } from '../../core/postal-location.service';
 import { AuthService } from '../../core/auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,7 +10,7 @@ import { MessagesSocketService } from '../../core/messages-socket.service';
 import { Subscription } from 'rxjs';
 type Applicant = {
   _id: string;
-  userId: { name?: string; email?: string } | null;
+  userId: { _id?: string; name?: string; email?: string } | null;
   createdAt: string;
   status: string;
   profile?: {
@@ -49,7 +49,18 @@ export class CompaniesPage {
   readonly locationLookupLoading: Signal<boolean>;
   readonly locationLookupError: WritableSignal<string>;
   companyDialog = false;
+  companySettingsId = '';
+  companySettingsNotice = '';
+  companyLogoError = '';
+  companySettings = { name: '', description: '', website: '', location: '', logo: '' };
   employeeEmail = '';
+  employeeSearchResults: ExistingEmployee[] = [];
+  selectedExistingEmployee: ExistingEmployee | null = null;
+  employeeSearchLoading = false;
+  employeeSearchError = '';
+  private employeeSearchTimeout?: ReturnType<typeof setTimeout>;
+  private employeeSearchRequest = 0;
+  private employeeSearchSubscription?: Subscription;
   newEmployeeName = '';
   newEmployeeEmail = '';
   newEmployeeGroupId = '';
@@ -64,7 +75,7 @@ export class CompaniesPage {
   notice = '';
   selectedCompanyId = '';
   selectedSection:
-    'overview' | 'jobs' | 'projects' | 'roles' | 'employees' | 'settings' | 'groups' = 'overview';
+    'overview' | 'jobs' | 'projects' | 'roles' | 'employees' | 'settings' | 'groups' | 'employers' = 'overview';
   selectedGroupId = '';
   selectedPageTab: 'posts' | 'about' | 'photos' | 'reviews' | 'more' = 'posts';
   pageNotice = 'Your company page is live';
@@ -76,6 +87,15 @@ export class CompaniesPage {
   readonly applicantsError = signal('');
   readonly applicantSkills = parseSkills;
   readonly applicants = signal<Applicant[]>([]);
+  readonly applicantStages = [
+    'New',
+    'Shortlisted',
+    'Contacted',
+    'Interviewing',
+    'Selected',
+    'Rejected',
+    'Completed',
+  ];
   editingJobId = '';
   jobPublished = false;
   jobTitle = '';
@@ -119,6 +139,10 @@ export class CompaniesPage {
     this.pageJobs = service.pageJobs;
     this.jobsLoading = service.jobsLoading;
     this.jobsError = service.jobsError;
+    effect(() => {
+      this.companies();
+      this.syncCompanySettings();
+    });
     this.service.load();
     this.socketSubscription = socket.updates().subscribe(() => {
       if (this.selectedSection === 'employees') this.loadCompanyMessages();
@@ -143,14 +167,15 @@ export class CompaniesPage {
         this.selectCompany(pageId, false);
         this.selectedProjectId = params.get('projectId') ?? '';
         const section = this.route.snapshot.url.find((segment) =>
-          ['jobs', 'projects', 'settings', 'messages', 'groups'].includes(segment.path),
+          ['jobs', 'projects', 'settings', 'messages', 'groups', 'employers'].includes(segment.path),
         )?.path;
         this.selectedGroupId = params.get('groupId') ?? '';
         if (
           section === 'jobs' ||
           section === 'projects' ||
           section === 'settings' ||
-          section === 'groups'
+          section === 'groups' ||
+          section === 'employers'
         )
           this.selectedSection = section;
         else if (section === 'messages') {
@@ -172,6 +197,8 @@ export class CompaniesPage {
   ngOnDestroy(): void {
     this.socketSubscription.unsubscribe();
     this.presenceSubscription.unsubscribe();
+    if (this.employeeSearchTimeout) clearTimeout(this.employeeSearchTimeout);
+    this.employeeSearchSubscription?.unsubscribe();
   }
   isCompanyContactOnline(conversation: any): boolean {
     return conversation?.userId?.activeStatus !== false && conversation?.userId?.isOnline === true;
@@ -391,16 +418,58 @@ export class CompaniesPage {
     this.locationLookup.lookup(countryCode, postalCode);
   }
   addEmployee(): void {
-    if (!this.selected || !this.employeeEmail.trim()) return;
+    if (!this.selected || !this.selectedExistingEmployee) return;
     this.service.addEmployee(
       this.selected,
-      this.employeeEmail.trim(),
+      this.selectedExistingEmployee.email,
       this.employeeRoles,
       this.employeeGroupId || undefined,
+      () => {
+        this.employeeEmail = '';
+        this.selectedExistingEmployee = null;
+        this.employeeSearchResults = [];
+        this.employeeGroupId = '';
+        this.employeeRoles = ['member'];
+      },
     );
-    this.employeeEmail = '';
-    this.employeeGroupId = '';
-    this.notice = 'Employee added.';
+  }
+  searchExistingEmployees(query: string): void {
+    this.employeeEmail = query;
+    this.selectedExistingEmployee = null;
+    this.employeeSearchResults = [];
+    this.employeeSearchError = '';
+    this.employeeSearchRequest += 1;
+    const request = this.employeeSearchRequest;
+    if (this.employeeSearchTimeout) clearTimeout(this.employeeSearchTimeout);
+    this.employeeSearchSubscription?.unsubscribe();
+    const term = query.trim();
+    if (term.length < 2) {
+      this.employeeSearchLoading = false;
+      return;
+    }
+    this.employeeSearchLoading = true;
+    this.employeeSearchTimeout = setTimeout(() => {
+      this.employeeSearchSubscription = this.service
+        .searchEmployees(this.selectedCompanyId, term)
+        .subscribe({
+        next: (employees) => {
+          if (request !== this.employeeSearchRequest) return;
+          this.employeeSearchResults = employees;
+          this.employeeSearchLoading = false;
+        },
+        error: (error) => {
+          if (request !== this.employeeSearchRequest) return;
+          this.employeeSearchError = error.error?.message || 'Could not search employees.';
+          this.employeeSearchLoading = false;
+        },
+        });
+    }, 100);
+  }
+  selectExistingEmployee(employee: ExistingEmployee): void {
+    this.selectedExistingEmployee = employee;
+    this.employeeEmail = employee.email;
+    this.employeeSearchResults = [];
+    this.employeeSearchError = '';
   }
   createEmployee(companyId: string): void {
     if (!this.newEmployeeName.trim() || !this.newEmployeeEmail.trim()) return;
@@ -464,6 +533,15 @@ export class CompaniesPage {
   updateEmployeeRole(companyId: string, employeeId: string, roles: string[]): void {
     this.service.updateEmployeeRole(companyId, employeeId, roles);
   }
+  roleSummary(roles: string[]): string {
+    return roles.length ? roles.map((role) => role[0].toUpperCase() + role.slice(1)).join(', ') : 'Select roles';
+  }
+  hasRole(roles: string[], role: string): boolean {
+    return roles.includes(role);
+  }
+  toggleRole(roles: string[], role: string, checked: boolean): string[] {
+    return checked ? [...new Set([...roles, role])] : roles.filter((item) => item !== role);
+  }
   removeEmployee(companyId: string, employeeId: string): void {
     this.service.removeEmployee(companyId, employeeId);
   }
@@ -505,6 +583,48 @@ export class CompaniesPage {
             this.applicantsLoading.set(false);
           }
         },
+      });
+  }
+  updateApplicantStage(applicant: Applicant, status: string): void {
+    const jobId = this.applicantJobId();
+    if (!jobId) return;
+    this.http
+      .patch<Applicant>(
+        `${environment.apiUrl}/jobs/${jobId}/applications/${applicant._id}/status`,
+        { status },
+        {
+          headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+        },
+      )
+      .subscribe({
+        next: (updated) =>
+          this.applicants.update((items) =>
+            items.map((item) =>
+              item._id === updated._id ? { ...item, status: updated.status } : item,
+            ),
+          ),
+        error: (error) =>
+          this.applicantsError.set(error.error?.message || 'Could not update applicant stage.'),
+      });
+  }
+  messageApplicant(applicant: Applicant): void {
+    const recipientUserId = applicant.userId?._id;
+    if (!recipientUserId || !this.selectedCompanyId) return;
+    const jobTitle =
+      this.pageJobs().find((job) => job._id === this.applicantJobId())?.title || 'this job';
+    this.http
+      .post(
+        `${environment.apiUrl}/messages/${this.selectedCompanyId}/none`,
+        {
+          recipientUserId,
+          text: `Hi ${applicant.userId?.name || 'there'}, I’m contacting you about your application to ${jobTitle}.`,
+        },
+        { headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }) },
+      )
+      .subscribe({
+        next: () => this.router.navigate(['/companies', this.selectedCompanyId, 'messages']),
+        error: (error) =>
+          this.applicantsError.set(error.error?.message || 'Could not start a conversation.'),
       });
   }
   openJobDialog(job?: PageJob & { _id: string }): void {
@@ -577,6 +697,7 @@ export class CompaniesPage {
   }
   selectCompany(id: string, navigate = true): void {
     this.selectedCompanyId = id;
+    this.syncCompanySettings();
     this.selectedSection = 'overview';
     this.selectedPageTab = 'posts';
     this.service.loadProjects(id);
@@ -606,12 +727,62 @@ export class CompaniesPage {
     if (this.selectedCompanyId) this.router.navigate(['/companies', this.selectedCompanyId]);
   }
   openPageSettings(): void {
-    if (this.selectedCompanyId)
+    if (this.selectedCompanyId) {
+      this.syncCompanySettings();
       this.router.navigate(['/companies', this.selectedCompanyId, 'settings']);
+    }
+  }
+  saveCompanySettings(companyId: string): void {
+    if (!this.companySettings.name.trim() || !this.companySettings.description.trim()) return;
+    this.companySettingsNotice = '';
+    this.service.updateCompany(companyId, this.companySettings, () => {
+      this.companySettingsNotice = 'Company settings saved.';
+    });
+  }
+  onCompanyLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.companyLogoError = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
+      this.companyLogoError = 'Choose a PNG, JPEG, WebP, or GIF image.';
+      input.value = '';
+      return;
+    }
+    if (file.size > 1_500_000) {
+      this.companyLogoError = 'Choose an image smaller than 1.5 MB.';
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.companySettings.logo = typeof reader.result === 'string' ? reader.result : '';
+    };
+    reader.onerror = () => (this.companyLogoError = 'This image could not be opened.');
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+  private syncCompanySettings(): void {
+    const company = this.companies().find((item) => item._id === this.selectedCompanyId);
+    if (!company || this.companySettingsId === company._id) return;
+    this.companySettingsId = company._id;
+    this.companySettings = {
+      name: company.name ?? '',
+      description: company.description ?? '',
+      website: company.website ?? '',
+      location: company.location ?? '',
+      logo: company.logo ?? '',
+    };
+    this.companySettingsNotice = '';
+    this.companyLogoError = '';
   }
   openPageGroups(): void {
     if (this.selectedCompanyId)
       this.router.navigate(['/companies', this.selectedCompanyId, 'groups']);
+  }
+  openPageEmployers(): void {
+    if (this.selectedCompanyId)
+      this.router.navigate(['/companies', this.selectedCompanyId, 'employers']);
   }
   openPageInbox(): void {
     if (this.selectedCompanyId)

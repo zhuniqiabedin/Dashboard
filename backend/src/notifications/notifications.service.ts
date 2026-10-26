@@ -44,6 +44,89 @@ export class NotificationsService {
       )
       .catch(() => undefined);
   }
+
+  async applicationStatus(
+    userId: Types.ObjectId,
+    type: 'job' | 'project',
+    itemId: Types.ObjectId,
+    status: string,
+  ) {
+    await this.notifications.create({
+      userId,
+      type: type === 'job' ? 'job_application_update' : 'project_application_update',
+      itemId,
+      message: `Your ${type} application status is now ${status}.`,
+    });
+  }
+
+  async matchingOpportunity(
+    userIds: Types.ObjectId[],
+    type: 'job' | 'project',
+    itemId: Types.ObjectId,
+    title: string,
+    pageId: Types.ObjectId,
+  ) {
+    const notificationType = type === 'job' ? 'matching_job' : 'matching_project';
+    await Promise.all(
+      userIds.map((userId) =>
+        this.notifications.updateOne(
+          { userId, type: notificationType, itemId },
+          {
+            $setOnInsert: {
+              userId,
+              type: notificationType,
+              itemId,
+              pageId,
+              message: `A ${type} matching your profile is available: ${title}.`,
+            },
+          },
+          { upsert: true },
+        ),
+      ),
+    );
+  }
+
+  async message(
+    pageId: Types.ObjectId,
+    senderId: string,
+    recipientUserId: string,
+    conversationId: Types.ObjectId,
+    preview: string,
+  ) {
+    if (recipientUserId !== senderId) {
+      await this.notifications.create({
+        userId: new Types.ObjectId(recipientUserId),
+        pageId,
+        itemId: conversationId,
+        type: 'message',
+        message: `New message: ${preview.slice(0, 100)}`,
+      });
+      return;
+    }
+    const company = await this.companies.findById(pageId).lean();
+    if (!company) return;
+    const recipients = new Set([String(company.ownerId)]);
+    for (const employee of company.employees ?? []) {
+      const roles = Array.isArray((employee as any).roles)
+        ? (employee as any).roles
+        : [(employee as any).role];
+      if (roles.some((role: string) => ['admin', 'recruiter', 'hr'].includes(role)))
+        recipients.add(String(employee.userId));
+    }
+    recipients.delete(senderId);
+    await this.notifications
+      .insertMany(
+        [...recipients].map((userId) => ({
+          userId: new Types.ObjectId(userId),
+          pageId,
+          itemId: conversationId,
+          type: 'company_message',
+          message: `New message from a Workpath member: ${preview.slice(0, 100)}`,
+        })),
+        { ordered: false },
+      )
+      .catch(() => undefined);
+  }
   mine(userId: string) {
     return this.notifications.find({ userId }).sort({ createdAt: -1 }).limit(50).lean();
   }

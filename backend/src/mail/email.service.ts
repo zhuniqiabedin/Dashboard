@@ -1,9 +1,10 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private transporter?: nodemailer.Transporter;
 
   constructor(private readonly config: ConfigService) {}
@@ -11,9 +12,18 @@ export class EmailService {
   async verifyConfiguration(): Promise<void> {
     try {
       await this.getTransporter().verify();
-    } catch {
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) throw error;
+      const smtpError = error as {
+        code?: string;
+        responseCode?: number;
+        command?: string;
+      };
+      this.logger.error(
+        `SMTP verification failed (code=${smtpError.code ?? 'unknown'}, responseCode=${smtpError.responseCode ?? 'none'}, command=${smtpError.command ?? 'unknown'}).`,
+      );
       throw new ServiceUnavailableException(
-        'The SMTP server is not ready. Check the email settings before creating an employee.',
+        'Brevo SMTP is not ready. Check the SMTP login, SMTP key, and verified sender settings.',
       );
     }
   }
@@ -26,7 +36,11 @@ export class EmailService {
   ): Promise<void> {
     const transporter = this.getTransporter();
     const from = this.config.get<string>('SMTP_FROM');
-    const appUrl = (this.config.get<string>('APP_URL') ?? 'http://localhost:4200').replace(
+    const appUrl = (
+      this.config.get<string>('APP_URL') ??
+      this.config.get<string>('RENDER_EXTERNAL_URL') ??
+      'http://localhost:4200'
+    ).replace(
       /\/$/,
       '',
     );
@@ -42,23 +56,41 @@ export class EmailService {
     });
   }
 
+  async sendRegistrationConfirmation(recipient: string, name: string, code: string): Promise<void> {
+    const transporter = this.getTransporter();
+    const from = this.config.get<string>('SMTP_FROM');
+    const safeName = this.escapeHtml(name);
+    await transporter.sendMail({
+      from,
+      to: recipient,
+      subject: 'Confirm your Workpath email address',
+      text: `Hello ${name},\n\nYour Workpath confirmation code is ${code}. It expires in 10 minutes.`,
+      html: `<p>Hello ${safeName},</p><p>Your Workpath confirmation code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:6px">${code}</p><p>This code expires in 10 minutes.</p>`,
+    });
+  }
+
   private getTransporter(): nodemailer.Transporter {
     if (this.transporter) return this.transporter;
-    const host = this.config.get<string>('SMTP_HOST');
+    const host = this.config.get<string>('SMTP_HOST') ?? 'smtp-relay.brevo.com';
     const port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
     const from = this.config.get<string>('SMTP_FROM');
-    if (!host || !from || !Number.isInteger(port) || port < 1 || port > 65535) {
+    if (!from || !Number.isInteger(port) || port < 1 || port > 65535) {
       throw new ServiceUnavailableException(
-        'Company invitations are unavailable until SMTP_HOST, SMTP_PORT, and SMTP_FROM are configured.',
+        'Email is not configured. Set SMTP_FROM to a verified Brevo sender address.',
       );
     }
     const user = this.config.get<string>('SMTP_USER');
     const pass = this.config.get<string>('SMTP_PASSWORD');
+    if (!user || !pass) {
+      throw new ServiceUnavailableException(
+        'Brevo SMTP credentials are missing. Set SMTP_USER and SMTP_PASSWORD.',
+      );
+    }
     this.transporter = nodemailer.createTransport({
       host,
       port,
       secure: this.config.get<string>('SMTP_SECURE') === 'true' || port === 465,
-      ...(user && pass ? { auth: { user, pass } } : {}),
+      auth: { user, pass },
     });
     return this.transporter;
   }

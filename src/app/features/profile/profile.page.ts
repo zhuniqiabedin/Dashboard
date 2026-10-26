@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Component, OnInit } from '@angular/core';
 import { Branches } from '../../branches';
 import { AuthService } from '../../core/auth.service';
+import { environment } from '../../../environments/environment';
 
 type Profile = {
   name: string;
@@ -16,6 +17,10 @@ type Profile = {
   experience: string;
   education: string;
   photo: string;
+  isPublic: boolean;
+  availability: 'Open to opportunities' | 'Not looking' | 'Open to projects';
+  preferredWorkTypes: string[];
+  preferredWorkplace: 'Any' | 'Remote' | 'Hybrid' | 'Onsite';
 };
 
 @Component({
@@ -45,7 +50,7 @@ export class ProfilePage implements OnInit {
 
   ngOnInit(): void {
     this.http
-      .get<Partial<Profile>>('http://localhost:3000/profiles/me', { headers: this.headers() })
+      .get<Partial<Profile>>(`${environment.apiUrl}/profiles/me`, { headers: this.headers() })
       .subscribe({
         next: (profile) => {
           this.profile = { ...this.profile, ...profile };
@@ -100,7 +105,7 @@ export class ProfilePage implements OnInit {
   saveProfile(): void {
     const { email: _email, ...editableProfile } = this.profile;
     this.http
-      .patch<Partial<Profile>>('http://localhost:3000/profiles/me', editableProfile, {
+      .patch<Partial<Profile>>(`${environment.apiUrl}/profiles/me`, editableProfile, {
         headers: this.headers(),
       })
       .subscribe({
@@ -137,6 +142,10 @@ export class ProfilePage implements OnInit {
       experience: '',
       education: '',
       photo: '',
+      isPublic: true,
+      availability: 'Open to opportunities',
+      preferredWorkTypes: ['Permanent', 'Contract', 'Project'],
+      preferredWorkplace: 'Any',
     };
     try {
       const user = JSON.parse(localStorage.getItem('career-space-user') || '{}') as {

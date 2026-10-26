@@ -10,6 +10,7 @@ import { environment } from '../../../environments/environment';
 
 type PublishedJob = {
   hasApplied: boolean;
+  isCompanyDraft?: boolean;
   _id: string;
   pageId: string;
   companyName: string;
@@ -110,6 +111,11 @@ type PublishedJob = {
                 class="text-sm font-medium text-[#2864dc] hover:underline"
                 >{{ job.companyName }}</a
               >
+              @if (job.isCompanyDraft) {
+                <span class="ml-2 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-800">
+                  Unpublished · company members only
+                </span>
+              }
               @if (job.match.score > 0) {
                 <p class="mt-2 text-xs font-medium text-green-700">
                   {{ job.match.score }}% skill match · {{ job.match.matched.join(', ') }}
@@ -137,6 +143,11 @@ type PublishedJob = {
                   <li class="text-xs text-stone-400">No skills specified.</li>
                 }
               </ul>
+              @if (job.isCompanyDraft) {
+                <p class="mt-5 border-t border-stone-100 pt-4 text-xs text-stone-500">
+                  This job is visible only to members of your company until it is published.
+                </p>
+              } @else {
               <div class="mt-5 border-t border-stone-100 pt-4">
                 <p class="mb-3 text-xs text-stone-500">
                   Applying shares your name, email, skills, profile details, and phone number (if
@@ -164,6 +175,7 @@ type PublishedJob = {
                   </p>
                 }
               </div>
+              }
             </article>
           } @empty {
             <p class="py-8 text-sm text-stone-500 md:col-span-2 xl:col-span-3">
@@ -206,7 +218,7 @@ export class PublishedJobsPage {
           .join(' ')
           .toLowerCase();
         return (
-          (!this.recommended() || job.match.score >= 50) &&
+          (!this.recommended() || job.match.score >= 50 || job.isCompanyDraft) &&
           (!this.workplace() || (job.workplace || 'Onsite') === this.workplace()) &&
           terms.every((term) => text.includes(term))
         );
@@ -217,7 +229,7 @@ export class PublishedJobsPage {
     this.load();
   }
   apply(job: PublishedJob): void {
-    if (job.hasApplied || this.applying().includes(job._id)) return;
+    if (job.isCompanyDraft || job.hasApplied || this.applying().includes(job._id)) return;
     this.applying.update((ids) => [...ids, job._id]);
     this.applicationErrors.update((errors) => ({ ...errors, [job._id]: '' }));
     this.http

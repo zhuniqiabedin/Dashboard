@@ -27,6 +27,7 @@ type Post = {
   likes: number;
   comments: number;
   callToAction: string;
+  isCompanyDraft?: boolean;
   match?: number;
   matchedSkills?: string[];
 };
@@ -292,7 +293,7 @@ export class DiscoverPage {
     if (this.employeeMode) {
       const source = this.employeeProjects.length
         ? this.employeeProjects
-        : this.projectsService.publishedProjects().map((project) => ({
+        : this.projectsService.publishedProjects().filter((project) => !project.isCompanyDraft).map((project) => ({
             id: project.id,
             pageId: project.pageId,
             type: 'Project' as const,
@@ -331,7 +332,9 @@ export class DiscoverPage {
       author: project.pageName || 'Company',
       authorInitials: (project.pageName || 'Company').slice(0, 2).toUpperCase(),
       avatarTone: 'bg-[#e8f3ff] text-[#0a66c2]',
-      headline: 'Published project',
+      headline: project.isCompanyDraft
+        ? 'Unpublished draft · company members only'
+        : 'Published project',
       posted: 'Recently',
       title: project.title,
       summary: project.summary,
@@ -340,6 +343,7 @@ export class DiscoverPage {
       likes: 0,
       comments: 0,
       callToAction: 'View project',
+      isCompanyDraft: project.isCompanyDraft,
     }));
     return companyProjects.filter((post) => {
       const typeMatches =

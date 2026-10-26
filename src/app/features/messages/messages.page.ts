@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth.service';
 import { environment } from '../../../environments/environment';
 import { MessagesSocketService } from '../../core/messages-socket.service';
 import { Subscription } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 @Component({
   selector: 'app-messages-page',
   standalone: false,
@@ -18,13 +19,16 @@ export class MessagesPage {
   query = '';
   filter = 'all';
   activeStatus = true;
+  private requestedConversationId: string | null;
   private readonly socketSubscription: Subscription;
   constructor(
     private readonly http: HttpClient,
     private readonly auth: AuthService,
     private readonly changeDetector: ChangeDetectorRef,
     private readonly socket: MessagesSocketService,
+    route: ActivatedRoute,
   ) {
+    this.requestedConversationId = route.snapshot.queryParamMap.get('conversation');
     this.load();
     this.socketSubscription = socket.updates().subscribe(() => this.load());
     socket.presence().subscribe((event) => {
@@ -193,9 +197,16 @@ export class MessagesPage {
             : (response.conversations ?? response.data ?? []);
           this.error = '';
           this.conversations = [...items];
-          this.selected = this.selected
+          const requested = this.requestedConversationId
+            ? items.find((item: any) => item._id === this.requestedConversationId)
+            : null;
+          this.selected = requested ?? (this.selected
             ? (items.find((item: any) => item._id === this.selected._id) ?? items[0])
-            : items[0];
+            : items[0]);
+          if (requested) {
+            this.requestedConversationId = null;
+            this.selectConversation(requested);
+          }
           this.changeDetector.detectChanges();
         },
         error: (error) => {

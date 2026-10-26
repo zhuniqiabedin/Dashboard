@@ -5,6 +5,13 @@ export class CreateCompanyDto {
   location?: string;
   logo?: string;
 }
+export class UpdateCompanyDto {
+  name?: string;
+  description?: string;
+  website?: string;
+  location?: string;
+  logo?: string;
+}
 import { CompanyRole } from './company.schema';
 export class AddEmployeeDto {
   email!: string;

@@ -26,6 +26,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../environments/environment';
 import { MessagesSocketService } from './core/messages-socket.service';
+import { MessagingDockComponent } from './shell/messaging-dock.component';
 
 type User = AuthUser;
 
@@ -39,6 +40,7 @@ type User = AuthUser;
     RouterLinkActive,
     RouterOutlet,
     FontAwesomeModule,
+    MessagingDockComponent,
   ],
   templateUrl: './app.component.html',
 })
@@ -60,6 +62,10 @@ export class AppComponent implements OnDestroy {
   readonly faPlus = faPlus;
   user: User | null = null;
   signup = false;
+  awaitingEmailConfirmation = false;
+  confirmationEmail = '';
+  confirmationCode = '';
+  confirmationNotice = '';
   mobileOpen = false;
   userMenu = false;
   notice = '';
@@ -69,6 +75,7 @@ export class AppComponent implements OnDestroy {
   password = '';
   busy = false;
   companyMode = false;
+  companyListingMode = false;
   fullHeightChat = false;
   notificationsOpen = false;
   notifications: any[] = [];
@@ -108,6 +115,7 @@ export class AppComponent implements OnDestroy {
       .subscribe((event) => {
         const parts = event.urlAfterRedirects.split('/').filter(Boolean);
         this.companyMode = parts[0] === 'companies' && parts.length >= 2;
+        this.companyListingMode = parts[0] === 'companies' && parts.length === 1;
         this.fullHeightChat =
           parts[0] === 'messages' || (parts[0] === 'companies' && parts.at(-1) === 'messages');
         this.changeDetector.markForCheck();
@@ -130,6 +138,10 @@ export class AppComponent implements OnDestroy {
         },
       });
   }
+  @HostListener('document:click')
+  closeNotificationDropdown(): void {
+    this.notificationsOpen = false;
+  }
   openNotification(item: any) {
     this.http
       .post(
@@ -141,6 +153,30 @@ export class AppComponent implements OnDestroy {
     this.notificationsOpen = false;
     if (item.type === 'event_reminder') {
       void this.router.navigate(['/calendar']);
+      return;
+    }
+    if (item.type === 'job_application_update') {
+      void this.router.navigate(['/jobs/applied']);
+      return;
+    }
+    if (item.type === 'project_application_update') {
+      void this.router.navigate(['/projects/applied']);
+      return;
+    }
+    if (item.type === 'matching_job') {
+      void this.router.navigate(['/discover_jobs']);
+      return;
+    }
+    if (item.type === 'matching_project') {
+      void this.router.navigate(['/discover_projects']);
+      return;
+    }
+    if (item.type === 'message') {
+      void this.router.navigate(['/messages']);
+      return;
+    }
+    if (item.type === 'company_message') {
+      void this.router.navigate(['/companies', item.pageId, 'messages']);
       return;
     }
     void this.router.navigate(
@@ -184,29 +220,84 @@ export class AppComponent implements OnDestroy {
   authenticate(): void {
     this.notice = '';
     this.busy = true;
-    const request = this.signup
-      ? this.auth.register(this.name.trim(), this.email.trim(), this.password)
-      : this.auth.login(this.email.trim(), this.password);
-    request.subscribe({
+    if (this.signup) {
+      this.auth.register(this.name.trim(), this.email.trim(), this.password).subscribe({
+        next: (response) => {
+          this.busy = false;
+          this.confirmationEmail = response.email;
+          this.awaitingEmailConfirmation = true;
+          this.confirmationCode = '';
+          this.confirmationNotice = '';
+          this.changeDetector.markForCheck();
+        },
+        error: (error: HttpErrorResponse) => this.handleAuthenticationError(error),
+      });
+      return;
+    }
+    this.auth.login(this.email.trim(), this.password).subscribe({
       next: ({ user }) => {
-        this.user = user;
-        if (this.auth.token) this.messagesSocket.connect(this.auth.token);
-        this.loadNotifications();
-        if (!this.notificationsTimer)
-          this.notificationsTimer = setInterval(() => this.loadNotifications(), 30_000);
-        this.password = '';
         this.busy = false;
+        this.completeAuthentication(user);
         this.changeDetector.markForCheck();
-        void this.router.navigateByUrl('/overview', { replaceUrl: true });
+      },
+      error: (error: HttpErrorResponse) => this.handleAuthenticationError(error),
+    });
+  }
+  confirmRegistrationEmail(): void {
+    if (this.busy) return;
+    this.busy = true;
+    this.confirmationNotice = '';
+    this.auth.confirmEmail(this.confirmationEmail, this.confirmationCode.trim()).subscribe({
+      next: () => {
+        this.busy = false;
+        this.awaitingEmailConfirmation = false;
+        this.signup = false;
+        this.email = this.confirmationEmail;
+        this.password = '';
+        this.confirmationCode = '';
+        this.notice = 'Your email is confirmed. You can now log in.';
+        this.changeDetector.markForCheck();
       },
       error: (error: HttpErrorResponse) => {
         this.busy = false;
-        this.notice =
-          error.error?.message ||
-          'Could not connect to the server. Make sure the Workpath API is running.';
+        this.confirmationNotice = error.error?.message || 'Could not confirm your email.';
         this.changeDetector.markForCheck();
       },
     });
+  }
+  resendRegistrationConfirmation(): void {
+    if (this.busy) return;
+    this.busy = true;
+    this.confirmationNotice = '';
+    this.auth.resendConfirmation(this.confirmationEmail).subscribe({
+      next: () => {
+        this.busy = false;
+        this.confirmationNotice = 'If that account needs confirmation, a new code has been sent.';
+        this.confirmationCode = '';
+        this.changeDetector.markForCheck();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.busy = false;
+        this.confirmationNotice = error.error?.message || 'Could not send another code.';
+        this.changeDetector.markForCheck();
+      },
+    });
+  }
+  private completeAuthentication(user: User): void {
+    this.user = user;
+    if (this.auth.token) this.messagesSocket.connect(this.auth.token);
+    this.loadNotifications();
+    if (!this.notificationsTimer)
+      this.notificationsTimer = setInterval(() => this.loadNotifications(), 30_000);
+    this.password = '';
+    void this.router.navigateByUrl('/overview', { replaceUrl: true });
+  }
+  private handleAuthenticationError(error: HttpErrorResponse): void {
+    this.busy = false;
+    this.notice =
+      error.error?.message ||
+      'Could not connect to the server. Make sure the Workpath API is running.';
+    this.changeDetector.markForCheck();
   }
   logout(): void {
     this.messagesSocket.disconnect();

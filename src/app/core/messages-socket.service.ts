@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
 export class MessagesSocketService {
   private readonly socket: Socket;
   constructor(auth: AuthService) {
-    this.socket = io(environment.apiUrl, {
+    this.socket = io(environment.socketUrl || undefined, {
       autoConnect: false,
       transports: ['websocket'],
       auth: { token: auth.token ?? '' },

@@ -11,19 +11,22 @@
 
   @if (notice) {
   <div
-    class="fixed right-4 top-4 z-[60] flex max-w-sm items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-800 shadow-lg"
+    class="fixed top-4 right-4 z-[60] flex max-w-sm items-center gap-3 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-800 shadow-lg"
     role="status"
     aria-live="polite"
   >
-    <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-100 font-semibold">✓</span>
+    <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-100 font-semibold"
+      >✓</span
+    >
     <span>{{ notice }}</span>
   </div>
   } @if (error) {
   <p class="mt-4 text-sm text-rose-600" role="alert">{{ error }}</p>
-  }
-
-  @if (meetingDialogOpen) {
-  <div class="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4" (click)="closeMeetingDialog()">
+  } @if (meetingDialogOpen) {
+  <div
+    class="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4"
+    (click)="closeMeetingDialog()"
+  >
     <section
       role="dialog"
       aria-modal="true"
@@ -158,9 +161,7 @@
           [class.font-semibold]="isToday(day) || isSelected(day)"
           [class.bg-[#e8f3ff]]="isToday(day) || isSelected(day)"
           [class.text-[#0a66c2]]="isToday(day) || isSelected(day)"
-          [class.cursor-not-allowed]="isPast(day)"
-          [class.opacity-40]="isPast(day)"
-          [disabled]="isPast(day)"
+          [class.opacity-40]="day < 1 || day > monthLength"
           [attr.aria-label]="(day < 1 ? prevLength + day : day > monthLength ? day - monthLength : day) + ' ' + monthTitle"
           [attr.aria-pressed]="isSelected(day)"
           (click)="selectDay(day)"
@@ -175,9 +176,27 @@
     </section>
 
     <section class="rounded-2xl border border-stone-200/80 bg-white p-5">
-      <div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR AGENDA</div>
-      <h2 class="mt-1 text-lg font-semibold">{{ selectedDate | date: 'EEEE, MMMM d' }}</h2>
-      @if (loading) {
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-semibold tracking-[.16em] text-stone-400">YOUR AGENDA</div>
+          <h2 class="mt-1 text-lg font-semibold">{{ selectedDate | date: 'EEEE, MMMM d' }}</h2>
+        </div>
+        <button
+          type="button"
+          class="shrink-0 rounded-lg bg-[#0a66c2] px-3 py-2 text-xs font-semibold text-white hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-40"
+          (click)="openMeetingDialog()"
+          [disabled]="selectedDateIsPast"
+          [attr.aria-disabled]="selectedDateIsPast"
+          [title]="selectedDateIsPast ? 'Events cannot be added to a past date' : 'Add an event'"
+        >
+          + Add event
+        </button>
+      </div>
+      @if (selectedDateIsPast) {
+      <p class="mt-2 text-xs text-stone-500">
+        Past events are shown for reference. You can’t add events to a past date.
+      </p>
+      } @if (loading) {
       <p class="mt-6 text-sm text-stone-500">Loading your events…</p>
       } @else if (selectedEvents.length) {
       <div class="mt-6 space-y-5">
@@ -188,7 +207,9 @@
           </time>
           <i class="w-0.5 shrink-0 self-stretch rounded-full bg-[#8bab9b]"></i>
           <div class="min-w-0 flex-1">
-            <b class="text-sm">{{ event.kind === 'meeting' ? 'Meeting: ' : '' }}{{ event.title }}</b>
+            <b class="text-sm"
+              >{{ event.kind === 'meeting' ? 'Meeting: ' : '' }}{{ event.title }}</b
+            >
             @if (event.description) {
             <p class="mt-1 text-xs whitespace-pre-line text-stone-500">{{ event.description }}</p>
             }

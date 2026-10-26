@@ -12,6 +12,7 @@ import { CalendarEventsModule } from './calendar-events/calendar-events.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CvModule } from './cv/cv.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { CvModule } from './cv/cv.module';
     CalendarEventsModule,
     NotificationsModule,
     CvModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
 })

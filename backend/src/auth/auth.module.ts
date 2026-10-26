@@ -6,9 +6,11 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { TokenService } from './token.service';
 import { User, UserSchema } from '../users/user.schema';
 import { Profile, ProfileSchema } from '../profiles/profile.schema';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
+    MailModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Profile.name, schema: ProfileSchema },

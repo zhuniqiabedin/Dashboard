@@ -7,6 +7,7 @@ import { CompaniesPage } from './companies.page';
 import { ProjectListComponent } from '../../shared/project-list/project-list.component';
 import { ProjectsPage } from '../projects/projects.page';
 import { ProjectDetailPage } from '../projects/project-detail.page';
+import { ReviewFormComponent } from '../../shared/review-form/review-form.component';
 @NgModule({
   declarations: [CompaniesPage],
   imports: [
@@ -16,6 +17,7 @@ import { ProjectDetailPage } from '../projects/project-detail.page';
     ProjectListComponent,
     ProjectsPage,
     ProjectDetailPage,
+    ReviewFormComponent,
     RouterModule.forChild([
       { path: '', component: CompaniesPage },
       { path: ':pageId/projects/new', component: CompaniesPage },
@@ -24,6 +26,7 @@ import { ProjectDetailPage } from '../projects/project-detail.page';
       { path: ':pageId/jobs', component: CompaniesPage },
       { path: ':pageId/groups', component: CompaniesPage },
       { path: ':pageId/groups/:groupId', component: CompaniesPage },
+      { path: ':pageId/employers', component: CompaniesPage },
       { path: ':pageId/settings', component: CompaniesPage },
       { path: ':pageId/messages', component: CompaniesPage },
       { path: ':pageId', component: CompaniesPage },

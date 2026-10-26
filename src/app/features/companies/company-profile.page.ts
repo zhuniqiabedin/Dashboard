@@ -50,6 +50,7 @@ export class CompanyProfilePage implements OnDestroy {
   private readonly router = inject(Router);
   readonly selectedTab = signal<'posts' | 'about' | 'projects' | 'jobs'>('posts');
   readonly company = signal<CompanyProfile | null>(null);
+  readonly companyReviews = signal<any[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
   private readonly projectApplications = inject(ProjectApplicationsService);
@@ -62,6 +63,7 @@ export class CompanyProfilePage implements OnDestroy {
         this.loading.set(true);
         this.error.set('');
         this.company.set(null);
+        this.companyReviews.set([]);
         this.selectedTab.set(this.routeTab());
         return this.http
           .get<CompanyProfile>(
@@ -85,6 +87,12 @@ export class CompanyProfilePage implements OnDestroy {
     .subscribe((company) => {
       this.company.set(company);
       this.loading.set(false);
+      if (company)
+        this.http
+          .get<any[]>(`${environment.apiUrl}/reviews/company/${this.companyId}`, {
+            headers: new HttpHeaders({ Authorization: `Bearer ${this.auth.token ?? ''}` }),
+          })
+          .subscribe({ next: (reviews) => this.companyReviews.set(reviews || []) });
     });
   private readonly navigationSubscription = this.router.events
     .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))

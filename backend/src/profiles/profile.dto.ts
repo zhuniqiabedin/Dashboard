@@ -12,4 +12,8 @@ export class UpdateProfileDto {
   experience?: string;
   education?: string;
   photo?: string;
+  isPublic?: boolean;
+  availability?: string;
+  preferredWorkTypes?: string[];
+  preferredWorkplace?: string;
 }

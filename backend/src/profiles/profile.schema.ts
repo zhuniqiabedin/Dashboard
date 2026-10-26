@@ -44,6 +44,21 @@ export class Profile {
 
   @Prop({ default: '' })
   photo!: string;
+
+  @Prop({ default: true, index: true })
+  isPublic!: boolean;
+
+  @Prop({
+    default: 'Open to opportunities',
+    enum: ['Open to opportunities', 'Not looking', 'Open to projects'],
+  })
+  availability!: string;
+
+  @Prop({ type: [String], default: ['Permanent', 'Contract', 'Project'] })
+  preferredWorkTypes!: string[];
+
+  @Prop({ default: 'Any', enum: ['Any', 'Remote', 'Hybrid', 'Onsite'] })
+  preferredWorkplace!: string;
 }
 
 export const ProfileSchema = SchemaFactory.createForClass(Profile);

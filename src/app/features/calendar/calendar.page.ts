@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth.service';
 
@@ -33,6 +33,7 @@ export class CalendarPage implements OnInit, OnDestroy {
   constructor(
     private readonly http: HttpClient,
     private readonly auth: AuthService,
+    private readonly changeDetector: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -73,7 +74,8 @@ export class CalendarPage implements OnInit, OnDestroy {
   }
 
   get minDate(): string {
-    return this.localDate(new Date());
+    const today = new Date();
+    return this.localDate(today);
   }
 
   get minTime(): string {
@@ -90,6 +92,13 @@ export class CalendarPage implements OnInit, OnDestroy {
       .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
   }
 
+  get selectedDateIsPast(): boolean {
+    const selected = new Date(`${this.selectedDate}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selected < today;
+  }
+
   shift(value: number): void {
     this.offset += value;
     this.selected = Math.min(this.today.getDate(), this.monthLength);
@@ -102,16 +111,15 @@ export class CalendarPage implements OnInit, OnDestroy {
 
   selectDay(day: number): void {
     const selectedDate = new Date(this.date.getFullYear(), this.date.getMonth(), day);
-    if (this.isPast(day)) return;
     this.offset =
       (selectedDate.getFullYear() - this.today.getFullYear()) * 12 +
       selectedDate.getMonth() -
       this.today.getMonth();
     this.selected = selectedDate.getDate();
-    this.openMeetingDialog();
   }
 
   openMeetingDialog(): void {
+    if (this.selectedDateIsPast) return;
     this.error = '';
     this.notice = '';
     this.newMeeting = { title: '', description: '', date: this.selectedDate, time: '09:00' };
@@ -215,10 +223,12 @@ export class CalendarPage implements OnInit, OnDestroy {
         next: (events) => {
           this.events = events;
           this.loading = false;
+          this.changeDetector.markForCheck();
         },
         error: (requestError: HttpErrorResponse) => {
           this.error = this.errorMessage(requestError, 'Could not load calendar events.');
           this.loading = false;
+          this.changeDetector.markForCheck();
         },
       });
   }

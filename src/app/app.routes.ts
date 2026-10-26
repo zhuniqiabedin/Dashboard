@@ -94,6 +94,11 @@ export const routes: Routes = [
           import('./features/jobs/applied-jobs.page').then((m) => m.AppliedJobsPage),
       },
       {
+        path: 'projects/applied',
+        loadComponent: () =>
+          import('./features/projects/applied-projects.page').then((m) => m.AppliedProjectsPage),
+      },
+      {
         path: 'discover_jobs',
         loadComponent: () =>
           import('./features/jobs/published-jobs.page').then((m) => m.PublishedJobsPage),

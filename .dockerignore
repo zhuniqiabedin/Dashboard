@@ -1,0 +1,9 @@
+.git
+.angular
+node_modules
+backend/node_modules
+backend/.env
+dist
+backend/dist
+coverage
+npm-debug.log

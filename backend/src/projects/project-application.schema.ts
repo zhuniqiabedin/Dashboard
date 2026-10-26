@@ -6,7 +6,7 @@ export class ProjectApplication {
   @Prop({ type: Types.ObjectId, required: true, ref: 'Project', index: true }) projectId!: Types.ObjectId;
   @Prop({ type: Types.ObjectId, required: true, ref: 'Company', index: true }) pageId!: Types.ObjectId;
   @Prop({ type: Types.ObjectId, required: true, ref: 'User', index: true }) userId!: Types.ObjectId;
-  @Prop({ default: 'Submitted' }) status!: string;
+  @Prop({ default: 'New', enum: ['New', 'Shortlisted', 'Contacted', 'Interviewing', 'Selected', 'Rejected', 'Completed'] }) status!: string;
   @Prop({ type: Object, default: {} }) profileSnapshot!: Record<string, unknown>;
   @Prop({ type: Object, default: {} }) cvSnapshot!: Record<string, unknown>;
 }
